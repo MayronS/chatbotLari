@@ -6,9 +6,8 @@ services:
       - "${PORT}:8080"
     environment:
       - AUTHENTICATION_API_KEY=${AUTHENTICATION_API_KEY}
-      - DATABASE_ENABLED=false
-      - DATABASE_PROVIDER=none
       - SERVER_PORT=8080
+
 
 
 
