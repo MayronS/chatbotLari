@@ -4,11 +4,12 @@ services:
     image: atendai/evolution-api:v1.8.2
     restart: always
     ports:
-      - "8080:8080"
+      - "${PORT}:8080"
     volumes:
       - evolution_instances:/evolution/instances
 
 volumes:
 
   evolution_instances:
+
 
