@@ -1,13 +1,9 @@
 services:
   evolution-api:
-    image: atendai/evolution-api:latest
+    image: atendeai/evolution-api:latest
     restart: always
     ports:
-      - "${PORT}:8080"
+      - "8080:8080" 
     environment:
-      - AUTHENTICATION_API_KEY=${AUTHENTICATION_API_KEY}
-      - SERVER_PORT=8080
-
-
-
-
+      - API_KEY=${API_KEY} 
+      - DATABASE_ENABLED=false
