@@ -1,15 +1,12 @@
 services:
   evolution-api:
-    container_name: evolution_api
-    image: atendai/evolution-api:v1.8.2
+    image: atendai/evolution-api:latest
     restart: always
     ports:
       - "${PORT}:8080"
-    volumes:
-      - evolution_instances:/evolution/instances
-
-volumes:
-
-  evolution_instances:
+    environment:
+      - AUTHENTICATION_API_KEY=${AUTHENTICATION_API_KEY}
+      - DATABASE_ENABLED=false
+      - SERVER_PORT=8080
 
 
