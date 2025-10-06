@@ -1,0 +1,3 @@
+FROM atendai/evolution-api
+ENV SERVER_PORT=8080
+EXPOSE 8080
