@@ -1,1 +1,1 @@
-FROM atende/evolution-api:latest
+FROM oficialevolution/evolution-api:latest
