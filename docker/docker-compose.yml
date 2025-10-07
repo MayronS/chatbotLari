@@ -1,9 +1,16 @@
+version: '3.9'
 services:
   evolution-api:
-    image: atendeai/evolution-api:latest
+    image: atendai/evolution-api:latest
     restart: always
+    # para Koyeb docker-compose recomendo usar a variável PORT, com fallback:
     ports:
-      - "8080:8080" 
-    environment:
-      - API_KEY=${API_KEY} 
-      - DATABASE_ENABLED=false
+      - "${PORT:-8080}:8080"
+    env_file:
+      - .env
+    # se você usar Volumes Koyeb, monte em /evolution/instances
+    volumes:
+      - evolution_instances:/evolution/instances
+
+volumes:
+  evolution_instances:
