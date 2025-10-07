@@ -1,16 +1,25 @@
-version: '3.9'
+version: "3.8"
+
 services:
   evolution-api:
     image: atendai/evolution-api:latest
+    container_name: evolution-api
     restart: always
-    # para Koyeb docker-compose recomendo usar a variável PORT, com fallback:
     ports:
-      - "${PORT:-8080}:8080"
-    env_file:
-      - .env
-    # se você usar Volumes Koyeb, monte em /evolution/instances
-    volumes:
-      - evolution_instances:/evolution/instances
-
-volumes:
-  evolution_instances:
+      - "${PORT}:8080"
+    environment:
+      - AUTHENTICATION_API_KEY=${AUTHENTICATION_API_KEY}
+      - DATABASE_ENABLED=${DATABASE_ENABLED}
+      - DATABASE_PROVIDER=${DATABASE_PROVIDER}
+      - DATABASE_URL=${DATABASE_URL}
+      - DISABLE_PRISMA_MIGRATE=${DISABLE_PRISMA_MIGRATE}
+      - PRISMA_ENABLED=${PRISMA_ENABLED}
+      - CACHE_LOCAL_ENABLED=${CACHE_LOCAL_ENABLED}
+      - CACHE_REDIS_ENABLED=${CACHE_REDIS_ENABLED}
+      - LANGUAGE=${LANGUAGE}
+      - LOG_LEVEL=${LOG_LEVEL}
+      - S3_ENABLED=${S3_ENABLED}
+      - SERVER_PORT=8080
+    command: >
+      sh -c "echo '🚀 Iniciando Evolution API (modo sem banco)...' &&
+             node dist/main.js"
