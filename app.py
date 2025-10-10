@@ -387,7 +387,7 @@ def webhook():
 
 
             # VARIAVEIS PARA VERIFICAR ENTRADAS
-            greetings = ["oi", "ola", "olá", "bom dia", "boa tarde", "boa noite", "eai", "opa", "menu","ajuda"]
+            greetings = ["oi", "oie", "lari","bot", "ola", "olá", "bom dia", "boa tarde", "boa noite", "eai", "opa", "menu","ajuda"]
 
             weeklyReport = ["relatorio semanal", "relatório semanal", "1", "01"]
 
@@ -405,7 +405,7 @@ def webhook():
 
             last_week = ["semana anterior", "passada", "semana passada", "anterior"]
 
-            current_week = ["esta semana", "desta semana", "semana atual", "atual", "esta", "desta"]
+            current_week = ["esta semana", "desta semana", "semana atual", "atual", "esta", "desta","dessa"]
 
             last_month = ["mês passado", "mes passado", "passado", "mês anterior", "mes anterior", "anterior"]
 
@@ -580,7 +580,7 @@ def webhook():
                         "Olá de novo! 😊\n\n"
                         "Lembrete: para registrar um gasto, use o formato:\n"
                         "*Data - Valor - Categoria*\n\n"
-                        "Exemplo: *`29/09/2025 - 55,30 - Supermercado`*\n\n"
+                        "Exemplo: `29/09/2025 - 55,30 - Supermercado`\n\n"
                         "Menu de opções:\n\n"
                         "1 - Relatorio semanal\n"
                         "2 - Relatorio mensal\n"
