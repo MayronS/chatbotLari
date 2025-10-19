@@ -29,7 +29,7 @@ sheet_states = None
 #FAZ A CONEXÃO COM O GOOGLE SHEETS
 try:
     SCOPE = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/drive']
-    CREDS = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", SCOPE)
+    CREDS = ServiceAccountCredentials.from_json_keyfile_name("/credentials.json", SCOPE)
     gclient = gspread.authorize(CREDS)
 
     # Conecta à planilha de gastos
