@@ -23,12 +23,6 @@ EVOLUTION_API_URL = os.getenv("EVOLUTION_API_URL")
 EVOLUTION_API_KEY = os.getenv("EVOLUTION_API_KEY")
 EVOLUTION_INSTANCE = os.getenv("EVOLUTION_INSTANCE")
 
-sheet = None
-sheet_ratings = None
-sheet_goals = None
-sheet_suggestions = None
-sheet_states = None
-
 connect_sheet.sheets()
 
     #BUSCA OS DADOS E PREPARA
