@@ -380,12 +380,14 @@ def webhook():
             message_body = (message_data.get("message", {}).get("conversation") or \
                            message_data.get("message", {}).get("extendedTextMessage", {}).get("text") or \
                            "").strip().lower()
+            
+            state_info = user_state.get_user_state(user_phone)
 
             today = datetime.now()
 
 
             # VARIAVEIS PARA VERIFICAR ENTRADAS
-            greetings = ["oi", "ola", "olá", "bom dia", "boa tarde", "boa noite", "eai", "opa", "menu","ajuda"]
+            greetings = ["oi", "oie", "lari","bot", "ola", "olá", "bom dia", "boa tarde", "boa noite", "eai", "opa", "menu","ajuda"]
 
             weeklyReport = ["relatorio semanal", "relatório semanal", "1", "01"]
 
@@ -403,7 +405,7 @@ def webhook():
 
             last_week = ["semana anterior", "passada", "semana passada", "anterior"]
 
-            current_week = ["esta semana", "desta semana", "semana atual", "atual", "esta", "desta"]
+            current_week = ["esta semana", "desta semana", "semana atual", "atual", "esta", "desta","dessa"]
 
             last_month = ["mês passado", "mes passado", "passado", "mês anterior", "mes anterior", "anterior"]
 
@@ -414,8 +416,7 @@ def webhook():
 
             # --- LÓGICA DE ESTADO ---
             # O usuário está respondendo a uma pergunta do bot?
-            if user_phone in user_states:
-                state_info = user_states[user_phone]
+            if state_info:
                 state = state_info.get('state')
 
                 if state == 'awaiting_suggestion':
@@ -425,7 +426,7 @@ def webhook():
                         send_whatsapp_message(user_phone, "✅ Obrigado! Sua sugestão foi registrada com sucesso e será analisada pela nossa equipe.")
                     else:
                         send_whatsapp_message(user_phone, "😕 Desculpe, ocorreu um erro interno ao salvar sua sugestão. Tente novamente mais tarde.")
-                    del user_states[user_phone]
+                    user_state.clear_user_state(user_phone)
 
 
                 elif state == 'awaiting_goal_amount':
@@ -445,7 +446,7 @@ def webhook():
                                 sheet_goals.append_row([user_phone, goal_value, current_month_str, 'FALSE', 'FALSE'])
 
                             send_whatsapp_message(user_phone, f"✅ Sua nova meta de gastos mensais foi definida para *R$ {goal_value:,.2f}*.".replace(',', '.'))
-                            del user_states[user_phone]
+                            user_state.clear_user_state(user_phone)
                         else:
                             send_whatsapp_message(user_phone, "Por favor, envie um valor positivo para a meta.")
                     except ValueError:
@@ -467,7 +468,7 @@ def webhook():
                             generate_summary_report(user_phone, start_date, end_date, title)
                         elif state_info['type'] == 'detailed':
                             generate_detailed_statement(user_phone, start_date, end_date, title)
-                        del user_states[user_phone]
+                        user_state.clear_user_state(user_phone)
                     else:
                         send_whatsapp_message(user_phone, "Opção inválida. Por favor, responda com 'esta semana' ou 'semana anterior'.")
 
@@ -489,7 +490,7 @@ def webhook():
                             generate_summary_report(user_phone, start_date, end_date, title)
                         elif state_info['type'] == 'detailed':
                             generate_detailed_statement(user_phone, start_date, end_date, title)
-                        del user_states[user_phone]
+                        user_state.clear_user_state(user_phone)
                     else:
                         send_whatsapp_message(user_phone, "Opção inválida. Por favor, responda com 'este mês' ou 'mês anterior'.")
 
@@ -503,10 +504,10 @@ def webhook():
                             sheet_ratings.append_row([user_phone, datetime.now().strftime('%d/%m/%Y'), rating, ''])
                             if rating <= 3:
                                 send_whatsapp_message(user_phone, "Obrigado pela sua nota. Gostaríamos de saber mais. Você gostaria de deixar um feedback para nos ajudar a melhorar? (Responda com seu feedback ou 'não')")
-                                user_states[user_phone] = {'state': 'awaiting_feedback'} # Muda o estado para aguardar o feedback
+                                user_state.set_user_state(user_phone, {'state': 'awaiting_feedback'}) # Muda o estado para aguardar o feedback
                             else:
                                 send_whatsapp_message(user_phone, "Ficamos felizes com a sua nota! Obrigado por avaliar nosso sistema. 😄")
-                                del user_states[user_phone] # Finaliza o estado de avaliação
+                                user_state.clear_user_state(user_phone) # Finaliza o estado de avaliação
                         else:
                             send_whatsapp_message(user_phone, "Nota inválida. Por favor, envie um número de 0 a 5.")
                     except ValueError:
@@ -517,38 +518,38 @@ def webhook():
                         handle_feedback_submission(user_phone, message_body)
                     else:
                         send_whatsapp_message(user_phone, "Entendido. Agradecemos sua avaliação mesmo assim!")
-                    del user_states[user_phone] # Finaliza o estado de avaliação
+                    user_state.clear_user_state(user_phone) # Finaliza o estado de avaliação
 
                 return jsonify({"status": "OK"}), 200 # Finaliza o processamento aqui
 
 
             if  message_body in suggestion:
                 send_whatsapp_message(user_phone, "Ficamos felizes em ouvir sua opinião! Por favor, envie sua sugestão de melhoria em uma única mensagem.")
-                user_states[user_phone] = {'state': 'awaiting_suggestion'}
+                user_state.set_user_state(user_phone, {'state': 'awaiting_suggestion'})
 
             elif  message_body in goal:
                 send_whatsapp_message(user_phone, "Qual valor você gostaria de definir como sua meta de gastos mensais?")
-                user_states[user_phone] = {'state': 'awaiting_goal_amount'}
+                user_state.set_user_state(user_phone, {'state': 'awaiting_goal_amount'})
 
             elif message_body in assessment:
                 send_whatsapp_message(user_phone, "Que bom que você quer nos avaliar! Por favor, envie uma nota de 0 a 5 para o sistema.")
-                user_states[user_phone] = {'state': 'awaiting_rating'}
+                user_state.set_user_state(user_phone, {'state': 'awaiting_rating'})
 
             elif message_body in weeklyStatement:
                 send_whatsapp_message(user_phone, "Você gostaria do extrato desta semana ou da semana anterior?")
-                user_states[user_phone] = {'state': 'awaiting_week_choice', 'type': 'detailed', 'title': 'Extrato Semanal'}
+                user_state.set_user_state(user_phone, {'state': 'awaiting_week_choice', 'type': 'detailed', 'title': 'Extrato Semanal'})
 
             elif message_body in monthlyStatement:
                 send_whatsapp_message(user_phone, "Você gostaria do extrato deste mês ou do mês anterior?")
-                user_states[user_phone] = {'state': 'awaiting_month_choice', 'type': 'detailed', 'title': 'Extrato Mensal'}
+                user_state.set_user_state(user_phone, {'state': 'awaiting_month_choice', 'type': 'detailed', 'title': 'Extrato Mensal'})
 
             elif message_body in weeklyReport:
                 send_whatsapp_message(user_phone, "Você gostaria do relatório desta semana ou da semana anterior?")
-                user_states[user_phone] = {'state': 'awaiting_week_choice', 'type': 'summary', 'title': 'Relatório Semanal'}
+                user_state.set_user_state(user_phone, {'state': 'awaiting_week_choice', 'type': 'summary', 'title': 'Relatório Semanal'})
 
             elif message_body in monthlyReport:
                 send_whatsapp_message(user_phone, "Você gostaria do relatório deste mês ou do mês anterior?")
-                user_states[user_phone] = {'state': 'awaiting_month_choice', 'type': 'summary', 'title': 'Relatório Mensal'}
+                user_state.set_user_state(user_phone, {'state': 'awaiting_month_choice', 'type': 'summary', 'title': 'Relatório Mensal'})
 
             elif message_body in greetings:
                 if is_new_user(user_phone):
@@ -579,6 +580,7 @@ def webhook():
                         "Olá de novo! 😊\n\n"
                         "Lembrete: para registrar um gasto, use o formato:\n"
                         "*Data - Valor - Categoria*\n\n"
+                        "Exemplo: `29/09/2025 - 55,30 - Supermercado`\n\n"
                         "Menu de opções:\n\n"
                         "1 - Relatorio semanal\n"
                         "2 - Relatorio mensal\n"
