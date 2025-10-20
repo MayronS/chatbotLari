@@ -27,6 +27,7 @@ sheet = None
 sheet_ratings = None
 sheet_goals = None
 sheet_suggestions = None
+sheet_states = None
 
 #FAZ A CONEXÃO COM O GOOGLE SHEETS
 try:
@@ -46,14 +47,52 @@ try:
     workbook_goals = gclient.open("Metas")
     sheet_goals = workbook_goals.sheet1
 
+    # Conecta à planilha de sugestoes
     workbook_suggestions = gclient.open("Sugestoes")
     sheet_suggestions = workbook_suggestions.sheet1
+
+    # Conecta a planilha de estados
+    workbook_states = gclient.open("UserStates")
+    sheet_states = workbook_states.sheet1
 
 
     print("Conexão com todas as planilhas bem-sucedida!")
 except Exception as e:
     print(f"Ocorreu um erro ao conectar com o Google Sheets: {e}")
+def set_user_state(user_phone, state_data):
+    try:
+        cell = app.sheet_states.find(str(user_phone))
+        state_str = json.dumps(state_data) # Converte o dicionário para texto
+        if cell:
+            app.sheet_states.update_cell(cell.row, 2, state_str)
+        else:
+            app.sheet_states.append_row([str(user_phone), state_str])
+        print(f"Estado de {user_phone} salvo: {state_str}")
+    except Exception as e:
+        print(f"Erro ao salvar estado para {user_phone}: {e}")
 
+
+def get_user_state(user_phone):
+    try:
+        cell = app.sheet_states.find(str(user_phone))
+        if cell:
+            state_str = app.sheet_states.cell(cell.row, 2).value
+            if state_str:
+                print(f"Estado de {user_phone} encontrado: {state_str}")
+                return json.loads(state_str) # Converte o texto de volta para dicionário
+        return None
+    except Exception as e:
+        print(f"Erro ao buscar estado para {user_phone}: {e}")
+        return None
+
+def clear_user_state(user_phone):
+    try:
+        cell = app.sheet_states.find(str(user_phone))
+        if cell:
+            app.sheet_states.update_cell(cell.row, 2, "") # Limpa a célula do estado
+            print(f"Estado de {user_phone} limpo.")
+    except Exception as e:
+        print(f"Erro ao limpar estado para {user_phone}: {e}")
     #BUSCA OS DADOS E PREPARA
 def get_user_data(user_phone):
     records = sheet.get_all_records(value_render_option='UNFORMATTED_VALUE')
