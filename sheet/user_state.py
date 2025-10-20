@@ -1,4 +1,4 @@
-import connect_sheet
+from . import connect_sheet
 import json
 
 
