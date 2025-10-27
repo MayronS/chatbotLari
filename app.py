@@ -405,11 +405,11 @@ def webhook():
 
             last_week = ["semana anterior", "passada", "semana passada", "anterior"]
 
-            current_week = ["esta semana", "desta semana", "semana atual", "atual", "esta", "desta","dessa"]
+            current_week = ["esta semana", "desta semana", "semana atual","dessa semana", "atual", "esta", "desta","dessa"]
 
             last_month = ["mês passado", "mes passado", "passado", "mês anterior", "mes anterior", "anterior"]
 
-            current_month = ["este mês", "este mes", "este", "atual", "deste mes", "deste mês", "deste", "mês atual", "mes atual"]
+            current_month = ["este mês", "este mes", "este", "atual", "deste mes", "deste mês", "desse mês", "desse mes", "deste", "mês atual", "mes atual"]
 
             cancel_words = ["sair", "cancelar", "voltar", "volta", "cancela", "cancelamento", "pare", "interromper"]
 
