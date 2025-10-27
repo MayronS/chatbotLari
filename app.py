@@ -411,6 +411,7 @@ def webhook():
 
             current_month = ["este mês", "este mes", "este", "atual", "deste mes", "deste mês", "deste", "mês atual", "mes atual"]
 
+            cancel_words = ["sair", "cancelar", "voltar", "volta", "cancela", "cancelamento", "pare", "interromper"]
 
 
 
@@ -418,6 +419,11 @@ def webhook():
             # O usuário está respondendo a uma pergunta do bot?
             if state_info:
                 state = state_info.get('state')
+                
+                if message_body in cancel_words:
+                    send_whatsapp_message(user_phone, "Ok, operação cancelada. 👍")
+                    clear_user_state(user_phone)
+                    return
 
                 if state == 'awaiting_suggestion':
                     if sheet_suggestions:
