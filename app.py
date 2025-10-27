@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 from dotenv import load_dotenv
 load_dotenv()
 
-
+import sheet.connectSheet as connectSheet
 app = Flask(__name__)
 
 #CHAVES
@@ -20,62 +20,27 @@ EVOLUTION_API_URL = os.getenv("EVOLUTION_API_URL")
 EVOLUTION_API_KEY = os.getenv("EVOLUTION_API_KEY")
 EVOLUTION_INSTANCE = os.getenv("EVOLUTION_INSTANCE")
 
-sheet = None
-sheet_ratings = None
-sheet_goals = None
-sheet_suggestions = None
-sheet_states = None
-
-#FAZ A CONEXÃO COM O GOOGLE SHEETS
-try:
-    SCOPE = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/drive']
-    CREDS = ServiceAccountCredentials.from_json_keyfile_name("/credentials.json", SCOPE)
-    gclient = gspread.authorize(CREDS)
-
-    # Conecta à planilha de gastos
-    workbook_expenses = gclient.open("Planilha_gastos")
-    sheet = workbook_expenses.worksheet("Gastos")
-
-    # Conecta à planilha de avaliações
-    workbook_ratings = gclient.open("Avaliações")
-    sheet_ratings = workbook_ratings.sheet1
-
-    # Conecta à planilha de metas
-    workbook_goals = gclient.open("Metas")
-    sheet_goals = workbook_goals.sheet1
-
-    # Conecta à planilha de sugestoes
-    workbook_suggestions = gclient.open("Sugestoes")
-    sheet_suggestions = workbook_suggestions.sheet1
-    
-    # Conecta a planilha de estados
-    workbook_states = gclient.open("UserStates")
-    sheet_states = workbook_states.sheet1
-
-
-    print("Conexão com todas as planilhas bem-sucedida!")
-except Exception as e:
-    print(f"Ocorreu um erro ao conectar com o Google Sheets: {e}")
+connectSheet.connect_to_sheets()
 
     #FUNÇÕES PARA GERENCIAR O ESTADO NA PLANILHA
     
 def set_user_state(user_phone, state_data):
     try:
-        cell = sheet_states.find(str(user_phone))
+        cell = connectSheet.sheet_states.find(str(user_phone))
         state_str = json.dumps(state_data) # Converte o dicionário para texto
         if cell:
-            sheet_states.update_cell(cell.row, 2, state_str)
+            connectSheet.sheet_states.update_cell(cell.row, 2, state_str)
         else:
-            sheet_states.append_row([str(user_phone), state_str])
+            connectSheet.sheet_states.append_row([str(user_phone), state_str])
         print(f"Estado de {user_phone} salvo: {state_str}")
     except Exception as e:
         print(f"Erro ao salvar estado para {user_phone}: {e}")
 
 def get_user_state(user_phone):
     try:
-        cell = sheet_states.find(str(user_phone))
+        cell = connectSheet.sheet_states.find(str(user_phone))
         if cell:
-            state_str = sheet_states.cell(cell.row, 2).value
+            state_str = connectSheet.sheet_states.cell(cell.row, 2).value
             if state_str:
                 print(f"Estado de {user_phone} encontrado: {state_str}")
                 return json.loads(state_str) # Converte o texto de volta para dicionário
@@ -86,16 +51,16 @@ def get_user_state(user_phone):
 
 def clear_user_state(user_phone):
     try:
-        cell = sheet_states.find(str(user_phone))
+        cell = connectSheet.sheet_states.find(str(user_phone))
         if cell:
-            sheet_states.update_cell(cell.row, 2, "") # Limpa a célula do estado
+            connectSheet.sheet_states.update_cell(cell.row, 2, "") # Limpa a célula do estado
             print(f"Estado de {user_phone} limpo.")
     except Exception as e:
         print(f"Erro ao limpar estado para {user_phone}: {e}")
 
     #BUSCA OS DADOS E PREPARA
 def get_user_data(user_phone):
-    records = sheet.get_all_records(value_render_option='UNFORMATTED_VALUE')
+    records = connectSheet.sheet.get_all_records(value_render_option='UNFORMATTED_VALUE')
     if not records:
         return None # Retorna None se não houver registros
 
@@ -223,7 +188,7 @@ def is_new_user(user_phone):
     try:
         # findall procura por uma string em toda a planilha.
         # Se não encontrar nada, a lista estará vazia.
-        found_cells = sheet.findall(user_phone)
+        found_cells = connectSheet.sheet.findall(user_phone)
         return len(found_cells) == 0
     except Exception as e:
         print(f"Erro ao verificar se o usuário é novo: {e}")
@@ -231,7 +196,7 @@ def is_new_user(user_phone):
 
 # PROCESSA A MENSAGEM E ADICIONA OS DADOS A PLANILHA
 def add_expense_to_sheet(user_phone, message_body):
-    if not sheet:
+    if not connectSheet.sheet:
         return "Desculpe, estou com problemas para acessar a planilha no momento."
     try:
         parts = [item.strip() for item in message_body.split('-')]
@@ -256,7 +221,7 @@ def add_expense_to_sheet(user_phone, message_body):
 
         value = float(value_str.replace(',', '.'))
         new_row = [user_phone, date_str, value, category_str, datetime.now().strftime('%Y-%m-%d')]
-        sheet.append_row(new_row)
+        connectSheet.sheet.append_row(new_row)
 
         check_spending_goal(user_phone)
 
@@ -272,16 +237,16 @@ def add_expense_to_sheet(user_phone, message_body):
 
 #SALVA O FEEDBACK NA PLANILHA
 def handle_feedback_submission(user_phone, feedback_text):
-    if not sheet_ratings:
+    if not connectSheet.sheet_ratings:
         send_whatsapp_message(user_phone, "Ocorreu um erro ao salvar seu feedback. Tente novamente mais tarde.")
         return
     try:
         # Encontra a última avaliação feita pelo usuário para adicionar o feedback
-        user_cells = sheet_ratings.findall(str(user_phone))
+        user_cells = connectSheet.sheet_ratings.findall(str(user_phone))
         if user_cells:
             last_rating_row = user_cells[-1].row
             # A coluna 'Feedback' é a 4ª coluna (D)
-            sheet_ratings.update_cell(last_rating_row, 4, feedback_text)
+            connectSheet.sheet_ratings.update_cell(last_rating_row, 4, feedback_text)
             send_whatsapp_message(user_phone, "Obrigado! Seu feedback foi registrado e nos ajudará a melhorar. 😊")
         else:
             send_whatsapp_message(user_phone, "Não encontrei uma avaliação recente para associar a este feedback.")
@@ -293,13 +258,13 @@ def check_spending_goal(user_phone):
     print(f"Verificando alertas de meta para {user_phone}...")
     try:
         # 1. Busca a meta e o status dos alertas do usuário
-        cell = sheet_goals.find(str(user_phone))
+        cell = connectSheet.sheet_goals.find(str(user_phone))
         if not cell:
             print("Usuário não possui meta definida. Alertas não serão verificados.")
             return
 
         goal_row_index = cell.row
-        goal_row_values = sheet_goals.row_values(goal_row_index)
+        goal_row_values = connectSheet.sheet_goals.row_values(goal_row_index)
 
         goal_amount = float(goal_row_values[1])
         # Garante que temos todos os valores, mesmo que a coluna tenha sido adicionada agora
@@ -312,10 +277,10 @@ def check_spending_goal(user_phone):
         current_month_str = datetime.now().strftime('%Y-%m')
         if alert_month != current_month_str:
             print(f"Novo mês detectado. Resetando todos os alertas para {user_phone}.")
-            sheet_goals.update_cell(goal_row_index, 3, 'FALSE') # Alerta 50%
-            sheet_goals.update_cell(goal_row_index, 4, 'FALSE') # Alerta 80%
-            sheet_goals.update_cell(goal_row_index, 5, current_month_str) # Mês do Alerta
-            sheet_goals.update_cell(goal_row_index, 6, 'FALSE') # <<< ADICIONADO: Reseta o alerta de 100%
+            connectSheet.sheet_goals.update_cell(goal_row_index, 3, 'FALSE') # Alerta 50%
+            connectSheet.sheet_goals.update_cell(goal_row_index, 4, 'FALSE') # Alerta 80%
+            connectSheet.sheet_goals.update_cell(goal_row_index, 5, current_month_str) # Mês do Alerta
+            connectSheet.sheet_goals.update_cell(goal_row_index, 6, 'FALSE') # <<< ADICIONADO: Reseta o alerta de 100%
             alert_50_sent = 'FALSE'
             alert_80_sent = 'FALSE'
             alert_100_sent = 'FALSE'
@@ -340,7 +305,7 @@ def check_spending_goal(user_phone):
                 f"Total gasto no mês: *R$ {total_spent:,.2f}*".replace(',', '.')
             )
             send_whatsapp_message(user_phone, alert_text)
-            sheet_goals.update_cell(goal_row_index, 6, 'TRUE') # Atualiza a coluna F
+            connectSheet.sheet_goals.update_cell(goal_row_index, 6, 'TRUE') # Atualiza a coluna F
 
         # Se o de 100% não foi enviado, verifica o de 80%
         elif percentage >= 80 and alert_80_sent == 'FALSE':
@@ -350,7 +315,7 @@ def check_spending_goal(user_phone):
                 f"Total gasto no mês: *R$ {total_spent:,.2f}*".replace(',', '.')
             )
             send_whatsapp_message(user_phone, alert_text)
-            sheet_goals.update_cell(goal_row_index, 4, 'TRUE')
+            connectSheet.sheet_goals.update_cell(goal_row_index, 4, 'TRUE')
 
         # Se os outros não foram enviados, verifica o de 50%
         elif percentage >= 50 and alert_50_sent == 'FALSE':
@@ -360,7 +325,7 @@ def check_spending_goal(user_phone):
                 f"Total gasto no mês: *R$ {total_spent:,.2f}*".replace(',', '.')
             )
             send_whatsapp_message(user_phone, alert_text)
-            sheet_goals.update_cell(goal_row_index, 3, 'TRUE')
+            connectSheet.sheet_goals.update_cell(goal_row_index, 3, 'TRUE')
 
     except Exception as e:
         print(f"Erro ao verificar alertas de meta para {user_phone}: {e}")
@@ -426,9 +391,9 @@ def webhook():
                     return
 
                 if state == 'awaiting_suggestion':
-                    if sheet_suggestions:
+                    if connectSheet.sheet_suggestions:
                         # Salva a sugestão na planilha
-                        sheet_suggestions.append_row([user_phone, datetime.now().strftime('%d/%m/%Y'), message_body])
+                        connectSheet.sheet_suggestions.append_row([user_phone, datetime.now().strftime('%d/%m/%Y'), message_body])
                         send_whatsapp_message(user_phone, "✅ Obrigado! Sua sugestão foi registrada com sucesso e será analisada pela nossa equipe.")
                     else:
                         send_whatsapp_message(user_phone, "😕 Desculpe, ocorreu um erro interno ao salvar sua sugestão. Tente novamente mais tarde.")
@@ -439,17 +404,17 @@ def webhook():
                     try:
                         goal_value = float(message_body.replace(',', '.'))
                         if goal_value > 0:
-                            user_cell = sheet_goals.find(str(user_phone))
+                            user_cell = connectSheet.sheet_goals.find(str(user_phone))
                             current_month_str = datetime.now().strftime('%Y-%m')
 
                             if user_cell: # Se o usuário já tem uma meta, atualiza
                                 row = user_cell.row
-                                sheet_goals.update_cell(row, 2, goal_value) # Atualiza Meta
-                                sheet_goals.update_cell(row, 3, current_month_str) # Atualiza Mês
-                                sheet_goals.update_cell(row, 4, 'FALSE') # Reseta Alerta 50%
-                                sheet_goals.update_cell(row, 5, 'FALSE') # Reseta Alerta 80%
+                                connectSheet.sheet_goals.update_cell(row, 2, goal_value) # Atualiza Meta
+                                connectSheet.sheet_goals.update_cell(row, 3, current_month_str) # Atualiza Mês
+                                connectSheet.sheet_goals.update_cell(row, 4, 'FALSE') # Reseta Alerta 50%
+                                connectSheet.sheet_goals.update_cell(row, 5, 'FALSE') # Reseta Alerta 80%
                             else: # Se for novo, adiciona
-                                sheet_goals.append_row([user_phone, goal_value, current_month_str, 'FALSE', 'FALSE'])
+                                connectSheet.sheet_goals.append_row([user_phone, goal_value, current_month_str, 'FALSE', 'FALSE'])
 
                             send_whatsapp_message(user_phone, f"✅ Sua nova meta de gastos mensais foi definida para *R$ {goal_value:,.2f}*.".replace(',', '.'))
                             clear_user_state(user_phone)
@@ -504,10 +469,10 @@ def webhook():
                     try:
                         rating = int(message_body)
                         if 0 <= rating <= 5:
-                            if not sheet_ratings:
+                            if not connectSheet.sheet_ratings:
                                 raise Exception("A planilha de avaliações não foi conectada.")
                             # Salva a nota na planilha de avaliações
-                            sheet_ratings.append_row([user_phone, datetime.now().strftime('%d/%m/%Y'), rating, ''])
+                            connectSheet.sheet_ratings.append_row([user_phone, datetime.now().strftime('%d/%m/%Y'), rating, ''])
                             if rating <= 3:
                                 send_whatsapp_message(user_phone, "Obrigado pela sua nota. Gostaríamos de saber mais. Você gostaria de deixar um feedback para nos ajudar a melhorar? (Responda com seu feedback ou 'não')")
                                 set_user_state(user_phone, {'state': 'awaiting_feedback'}) # Muda o estado para aguardar o feedback
