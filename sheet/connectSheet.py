@@ -1,5 +1,4 @@
 import gspread
-import os
 from oauth2client.service_account import ServiceAccountCredentials
 
 
@@ -9,16 +8,12 @@ sheet_goals = None
 sheet_suggestions = None
 sheet_states = None
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.dirname(current_dir)
-credentials_path = os.path.join(project_root, 'credentials.json')
-
 #FAZ A CONEXÃO COM O GOOGLE SHEETS
 def connect_to_sheets():
   global sheet, sheet_ratings, sheet_goals, sheet_suggestions, sheet_states
   try:
       SCOPE = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/drive']
-      CREDS = ServiceAccountCredentials.from_json_keyfile_name(credentials_path, SCOPE)
+      CREDS = ServiceAccountCredentials.from_json_keyfile_name("/credentials.json", SCOPE)
       gclient = gspread.authorize(CREDS)
 
       # Conecta à planilha de gastos
