@@ -7,7 +7,11 @@ from datetime import datetime
 def check_spending_goal(user_phone):
     print(f"Verificando alertas de meta para {user_phone}...")
     try:
+<<<<<<< HEAD
         # Busca a meta e o status dos alertas do usuário
+=======
+        # 1. Busca a meta e o status dos alertas do usuário
+>>>>>>> 1b0fec1 (Mudando de local função check_spending_goal)
         cell = connectSheet.sheet_goals.find(str(user_phone))
         if not cell:
             print("Usuário não possui meta definida. Alertas não serão verificados.")
@@ -23,19 +27,31 @@ def check_spending_goal(user_phone):
         alert_month = goal_row_values[4] if len(goal_row_values) > 4 else ''
         alert_100_sent = goal_row_values[5] if len(goal_row_values) > 5 else 'FALSE'
 
+<<<<<<< HEAD
         # Reseta os alertas se o mês mudou
+=======
+        # 2. Reseta os alertas se o mês mudou
+>>>>>>> 1b0fec1 (Mudando de local função check_spending_goal)
         current_month_str = datetime.now().strftime('%Y-%m')
         if alert_month != current_month_str:
             print(f"Novo mês detectado. Resetando todos os alertas para {user_phone}.")
             connectSheet.sheet_goals.update_cell(goal_row_index, 3, 'FALSE') # Alerta 50%
             connectSheet.sheet_goals.update_cell(goal_row_index, 4, 'FALSE') # Alerta 80%
             connectSheet.sheet_goals.update_cell(goal_row_index, 5, current_month_str) # Mês do Alerta
+<<<<<<< HEAD
             connectSheet.sheet_goals.update_cell(goal_row_index, 6, 'FALSE') #Reseta o alerta de 100%
+=======
+            connectSheet.sheet_goals.update_cell(goal_row_index, 6, 'FALSE') # <<< ADICIONADO: Reseta o alerta de 100%
+>>>>>>> 1b0fec1 (Mudando de local função check_spending_goal)
             alert_50_sent = 'FALSE'
             alert_80_sent = 'FALSE'
             alert_100_sent = 'FALSE'
 
+<<<<<<< HEAD
         # Calcula o total de gastos do mês
+=======
+        # 3. Calcula o total de gastos do mês
+>>>>>>> 1b0fec1 (Mudando de local função check_spending_goal)
         user_df = dataPreparation.get_user_data(user_phone)
         if user_df is None: return
 
@@ -44,7 +60,11 @@ def check_spending_goal(user_phone):
         month_df = user_df[(user_df['Data'] >= start_of_month) & (user_df['Data'] <= today)]
         total_spent = month_df['Valor'].sum()
 
+<<<<<<< HEAD
         # Verifica e envia os alertas na ordem correta (100%, 80%, 50%)
+=======
+        # 4. Verifica e envia os alertas na ordem correta (100%, 80%, 50%)
+>>>>>>> 1b0fec1 (Mudando de local função check_spending_goal)
         percentage = (total_spent / goal_amount) * 100
 
         # Verifica o alerta de 100% primeiro
@@ -55,7 +75,11 @@ def check_spending_goal(user_phone):
                 f"Total gasto no mês: *R$ {total_spent:,.2f}*".replace(',', '.')
             )
             sendMessage.send_whatsapp_message(user_phone, alert_text)
+<<<<<<< HEAD
             connectSheet.sheet_goals.update_cell(goal_row_index, 6, 'TRUE')
+=======
+            connectSheet.sheet_goals.update_cell(goal_row_index, 6, 'TRUE') # Atualiza a coluna F
+>>>>>>> 1b0fec1 (Mudando de local função check_spending_goal)
 
         # Se o de 100% não foi enviado, verifica o de 80%
         elif percentage >= 80 and alert_80_sent == 'FALSE':
