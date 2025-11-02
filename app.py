@@ -17,50 +17,13 @@ from sheet import sheetState as sheetState
 from sheet import dataPreparation as dataPreparation
 from message import sendMessage as sendMessage
 from report import generateReport as generateReport
+from extract import generateExtract as generateExtract
 
 app = Flask(__name__)
 
 
 
 connectSheet.connect_to_sheets()
-
-
-#GERA OS EXTRATOS
-def generate_detailed_statement(user_phone, start_date, end_date, title):
-    print(f"Iniciando geração de extrato detalhado para {user_phone}...")
-    try:
-        user_df = dataPreparation.get_user_data(user_phone)
-        if user_df is None:
-            sendMessage.send_whatsapp_message(user_phone, "Não encontrei gastos registrados para o período solicitado.")
-            return
-
-        statement_df = user_df[(user_df['Data'] >= start_date) & (user_df['Data'] <= end_date)]
-
-        if statement_df.empty:
-            sendMessage.send_whatsapp_message(user_phone, "Você não teve nenhum gasto registrado no período solicitado.")
-            return
-
-        statement_df = statement_df.sort_values(by='Data')
-        report_lines = [f"*{title}*"]
-
-        for index, row in statement_df.iterrows():
-            date_str = row['Data'].strftime('%d/%m/%Y')
-            category = row['Categoria']
-            value = row['Valor']
-            valor_formatado_br = f"{row['Valor']:,.2f}".replace(',', '#').replace('.', ',').replace('#', '.')
-            report_lines.append(f"• {date_str} - {category.capitalize()}: *R$ {valor_formatado_br}*")
-
-        total_spent = statement_df['Valor'].sum()
-        total_spent_br = f"{total_spent:,.2f}".replace(',', '#').replace('.', ',').replace('#', '.')
-        report_lines.append("\n-----------------------------------")
-        report_lines.append(f"*Total do Período: R$ {total_spent_br}*")
-
-        final_report = "\n".join(report_lines)
-        sendMessage.send_whatsapp_message(user_phone, final_report)
-        print(f"Extrato detalhado enviado para {user_phone}.")
-    except Exception as e:
-        print(f"Erro ao gerar extrato detalhado: {e}")
-        sendMessage.send_whatsapp_message(user_phone, "Desculpe, não consegui gerar seu extrato.")
 
 
 #Função para verificar se é um novo usuário.
@@ -318,7 +281,7 @@ def webhook():
                         if state_info['type'] == 'summary':
                             generateReport.generate_summary_report(user_phone, start_date, end_date, title)
                         elif state_info['type'] == 'detailed':
-                            generate_detailed_statement(user_phone, start_date, end_date, title)
+                            generateExtract.generate_detailed_statement(user_phone, start_date, end_date, title)
                         sheetState.clear_user_state(user_phone)
                     else:
                         sendMessage.send_whatsapp_message(user_phone, "Opção inválida. Por favor, responda com 'esta semana' ou 'semana anterior'.")
@@ -340,7 +303,7 @@ def webhook():
                         if state_info['type'] == 'summary':
                             generateReport.generate_summary_report(user_phone, start_date, end_date, title)
                         elif state_info['type'] == 'detailed':
-                            generate_detailed_statement(user_phone, start_date, end_date, title)
+                            generateExtract.generate_detailed_statement(user_phone, start_date, end_date, title)
                         sheetState.clear_user_state(user_phone)
                     else:
                         sendMessage.send_whatsapp_message(user_phone, "Opção inválida. Por favor, responda com 'este mês' ou 'mês anterior'.")
