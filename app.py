@@ -16,47 +16,13 @@ from sheet import connectSheet as connectSheet
 from sheet import sheetState as sheetState
 from sheet import dataPreparation as dataPreparation
 from message import sendMessage as sendMessage
+from report import generateReport as generateReport
 
 app = Flask(__name__)
 
 
 
 connectSheet.connect_to_sheets()
-
-
-#FUNÇÃO PARA GERAR O RELATORIO
-def generate_summary_report(user_phone, start_date, end_date, title):
-    print(f"Iniciando geração de relatório resumido para {user_phone}...")
-    try:
-        user_df = dataPreparation.get_user_data(user_phone)
-        if user_df is None:
-            sendMessage.send_whatsapp_message(user_phone, "Não encontrei gastos registrados para o período solicitado.")
-            return
-
-        period_df = user_df[(user_df['Data'] >= start_date) & (user_df['Data'] <= end_date)]
-
-        if period_df.empty:
-            sendMessage.send_whatsapp_message(user_phone, "Você não teve nenhum gasto registrado no período solicitado.")
-            return
-
-        expenses_by_category = period_df.groupby('Categoria')['Valor'].sum()
-        total_spent = expenses_by_category.sum()
-
-        report_lines = [f"*{title}*"]
-        for category, total in expenses_by_category.sort_values(ascending=False).items():
-            valor_formatado_br = f"{total:,.2f}".replace(',', '#').replace('.', ',').replace('#', '.')
-            report_lines.append(f"• {category.capitalize()}: *R$ {valor_formatado_br}*")
-
-        total_spent_br = f"{total_spent:,.2f}".replace(',', '#').replace('.', ',').replace('#', '.')
-        report_lines.append("\n-----------------------------------")
-        report_lines.append(f"*Total Gasto no Período: R$ {total_spent_br}*")
-
-        final_report = "\n".join(report_lines)
-        sendMessage.send_whatsapp_message(user_phone, final_report)
-        print(f"Relatório resumido enviado para {user_phone}.")
-    except Exception as e:
-        print(f"Erro ao gerar relatório resumido: {e}")
-        sendMessage.send_whatsapp_message(user_phone, "Desculpe, não consegui gerar seu relatório.")
 
 
 #GERA OS EXTRATOS
@@ -350,7 +316,7 @@ def webhook():
                     if start_date and end_date:
                         title = f"📄 {state_info['title']} ({start_date.strftime('%d/%m')} a {end_date.strftime('%d/%m')})"
                         if state_info['type'] == 'summary':
-                            generate_summary_report(user_phone, start_date, end_date, title)
+                            generateReport.generate_summary_report(user_phone, start_date, end_date, title)
                         elif state_info['type'] == 'detailed':
                             generate_detailed_statement(user_phone, start_date, end_date, title)
                         sheetState.clear_user_state(user_phone)
@@ -372,7 +338,7 @@ def webhook():
                     if start_date and end_date:
                         title = f"🗓️ {state_info['title']} ({start_date.strftime('%B de %Y')})"
                         if state_info['type'] == 'summary':
-                            generate_summary_report(user_phone, start_date, end_date, title)
+                            generateReport.generate_summary_report(user_phone, start_date, end_date, title)
                         elif state_info['type'] == 'detailed':
                             generate_detailed_statement(user_phone, start_date, end_date, title)
                         sheetState.clear_user_state(user_phone)
