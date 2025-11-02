@@ -12,7 +12,9 @@ from datetime import datetime, timedelta
 from dotenv import load_dotenv
 load_dotenv()
 
-import sheet.connectSheet as connectSheet
+from sheet import connectSheet as connectSheet
+from sheet import sheetState as sheetState
+
 app = Flask(__name__)
 
 #CHAVES
@@ -24,39 +26,6 @@ connectSheet.connect_to_sheets()
 
     #FUNÇÕES PARA GERENCIAR O ESTADO NA PLANILHA
     
-def set_user_state(user_phone, state_data):
-    try:
-        cell = connectSheet.sheet_states.find(str(user_phone))
-        state_str = json.dumps(state_data) # Converte o dicionário para texto
-        if cell:
-            connectSheet.sheet_states.update_cell(cell.row, 2, state_str)
-        else:
-            connectSheet.sheet_states.append_row([str(user_phone), state_str])
-        print(f"Estado de {user_phone} salvo: {state_str}")
-    except Exception as e:
-        print(f"Erro ao salvar estado para {user_phone}: {e}")
-
-def get_user_state(user_phone):
-    try:
-        cell = connectSheet.sheet_states.find(str(user_phone))
-        if cell:
-            state_str = connectSheet.sheet_states.cell(cell.row, 2).value
-            if state_str:
-                print(f"Estado de {user_phone} encontrado: {state_str}")
-                return json.loads(state_str) # Converte o texto de volta para dicionário
-        return None
-    except Exception as e:
-        print(f"Erro ao buscar estado para {user_phone}: {e}")
-        return None
-
-def clear_user_state(user_phone):
-    try:
-        cell = connectSheet.sheet_states.find(str(user_phone))
-        if cell:
-            connectSheet.sheet_states.update_cell(cell.row, 2, "") # Limpa a célula do estado
-            print(f"Estado de {user_phone} limpo.")
-    except Exception as e:
-        print(f"Erro ao limpar estado para {user_phone}: {e}")
 
     #BUSCA OS DADOS E PREPARA
 def get_user_data(user_phone):
@@ -346,7 +315,7 @@ def webhook():
                            message_data.get("message", {}).get("extendedTextMessage", {}).get("text") or \
                            "").strip().lower()
             
-            state_info = get_user_state(user_phone)
+            state_info = sheetState.get_user_state(user_phone)
 
             today = datetime.now()
 
@@ -387,7 +356,7 @@ def webhook():
                 
                 if message_body in cancel_words:
                     send_whatsapp_message(user_phone, "Ok, operação cancelada. 👍")
-                    clear_user_state(user_phone)
+                    sheetState.clear_user_state(user_phone)
                     return
 
                 if state == 'awaiting_suggestion':
@@ -397,7 +366,7 @@ def webhook():
                         send_whatsapp_message(user_phone, "✅ Obrigado! Sua sugestão foi registrada com sucesso e será analisada pela nossa equipe.")
                     else:
                         send_whatsapp_message(user_phone, "😕 Desculpe, ocorreu um erro interno ao salvar sua sugestão. Tente novamente mais tarde.")
-                    clear_user_state(user_phone)
+                    sheetState.clear_user_state(user_phone)
 
 
                 elif state == 'awaiting_goal_amount':
@@ -417,7 +386,7 @@ def webhook():
                                 connectSheet.sheet_goals.append_row([user_phone, goal_value, current_month_str, 'FALSE', 'FALSE'])
 
                             send_whatsapp_message(user_phone, f"✅ Sua nova meta de gastos mensais foi definida para *R$ {goal_value:,.2f}*.".replace(',', '.'))
-                            clear_user_state(user_phone)
+                            sheetState.clear_user_state(user_phone)
                         else:
                             send_whatsapp_message(user_phone, "Por favor, envie um valor positivo para a meta.")
                     except ValueError:
@@ -439,7 +408,7 @@ def webhook():
                             generate_summary_report(user_phone, start_date, end_date, title)
                         elif state_info['type'] == 'detailed':
                             generate_detailed_statement(user_phone, start_date, end_date, title)
-                        clear_user_state(user_phone)
+                        sheetState.clear_user_state(user_phone)
                     else:
                         send_whatsapp_message(user_phone, "Opção inválida. Por favor, responda com 'esta semana' ou 'semana anterior'.")
 
@@ -461,7 +430,7 @@ def webhook():
                             generate_summary_report(user_phone, start_date, end_date, title)
                         elif state_info['type'] == 'detailed':
                             generate_detailed_statement(user_phone, start_date, end_date, title)
-                        clear_user_state(user_phone)
+                        sheetState.clear_user_state(user_phone)
                     else:
                         send_whatsapp_message(user_phone, "Opção inválida. Por favor, responda com 'este mês' ou 'mês anterior'.")
 
@@ -475,10 +444,10 @@ def webhook():
                             connectSheet.sheet_ratings.append_row([user_phone, datetime.now().strftime('%d/%m/%Y'), rating, ''])
                             if rating <= 3:
                                 send_whatsapp_message(user_phone, "Obrigado pela sua nota. Gostaríamos de saber mais. Você gostaria de deixar um feedback para nos ajudar a melhorar? (Responda com seu feedback ou 'não')")
-                                set_user_state(user_phone, {'state': 'awaiting_feedback'}) # Muda o estado para aguardar o feedback
+                                sheetState.set_user_state(user_phone, {'state': 'awaiting_feedback'}) # Muda o estado para aguardar o feedback
                             else:
                                 send_whatsapp_message(user_phone, "Ficamos felizes com a sua nota! Obrigado por avaliar nosso sistema. 😄")
-                                clear_user_state(user_phone) # Finaliza o estado de avaliação
+                                sheetState.clear_user_state(user_phone) # Finaliza o estado de avaliação
                         else:
                             send_whatsapp_message(user_phone, "Nota inválida. Por favor, envie um número de 0 a 5.")
                     except ValueError:
@@ -489,38 +458,38 @@ def webhook():
                         handle_feedback_submission(user_phone, message_body)
                     else:
                         send_whatsapp_message(user_phone, "Entendido. Agradecemos sua avaliação mesmo assim!")
-                    clear_user_state(user_phone) # Finaliza o estado de avaliação
+                    sheetState.clear_user_state(user_phone) # Finaliza o estado de avaliação
 
                 return jsonify({"status": "OK"}), 200 # Finaliza o processamento aqui
 
 
             if  message_body in suggestion:
                 send_whatsapp_message(user_phone, "Ficamos felizes em ouvir sua opinião! Por favor, envie sua sugestão de melhoria em uma única mensagem.")
-                set_user_state(user_phone, {'state': 'awaiting_suggestion'})
+                sheetState.set_user_state(user_phone, {'state': 'awaiting_suggestion'})
 
             elif  message_body in goal:
                 send_whatsapp_message(user_phone, "Qual valor você gostaria de definir como sua meta de gastos mensais?")
-                set_user_state(user_phone, {'state': 'awaiting_goal_amount'})
+                sheetState.set_user_state(user_phone, {'state': 'awaiting_goal_amount'})
 
             elif message_body in assessment:
                 send_whatsapp_message(user_phone, "Que bom que você quer nos avaliar! Por favor, envie uma nota de 0 a 5 para o sistema.")
-                set_user_state(user_phone, {'state': 'awaiting_rating'})
+                sheetState.set_user_state(user_phone, {'state': 'awaiting_rating'})
 
             elif message_body in weeklyStatement:
                 send_whatsapp_message(user_phone, "Você gostaria do extrato desta semana ou da semana anterior?")
-                set_user_state(user_phone, {'state': 'awaiting_week_choice', 'type': 'detailed', 'title': 'Extrato Semanal'})
+                sheetState.set_user_state(user_phone, {'state': 'awaiting_week_choice', 'type': 'detailed', 'title': 'Extrato Semanal'})
 
             elif message_body in monthlyStatement:
                 send_whatsapp_message(user_phone, "Você gostaria do extrato deste mês ou do mês anterior?")
-                set_user_state(user_phone, {'state': 'awaiting_month_choice', 'type': 'detailed', 'title': 'Extrato Mensal'})
+                sheetState.set_user_state(user_phone, {'state': 'awaiting_month_choice', 'type': 'detailed', 'title': 'Extrato Mensal'})
 
             elif message_body in weeklyReport:
                 send_whatsapp_message(user_phone, "Você gostaria do relatório desta semana ou da semana anterior?")
-                set_user_state(user_phone, {'state': 'awaiting_week_choice', 'type': 'summary', 'title': 'Relatório Semanal'})
+                sheetState.set_user_state(user_phone, {'state': 'awaiting_week_choice', 'type': 'summary', 'title': 'Relatório Semanal'})
 
             elif message_body in monthlyReport:
                 send_whatsapp_message(user_phone, "Você gostaria do relatório deste mês ou do mês anterior?")
-                set_user_state(user_phone, {'state': 'awaiting_month_choice', 'type': 'summary', 'title': 'Relatório Mensal'})
+                sheetState.set_user_state(user_phone, {'state': 'awaiting_month_choice', 'type': 'summary', 'title': 'Relatório Mensal'})
 
             elif message_body in greetings:
                 if is_new_user(user_phone):
