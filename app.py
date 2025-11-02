@@ -15,13 +15,11 @@ load_dotenv()
 from sheet import connectSheet as connectSheet
 from sheet import sheetState as sheetState
 from sheet import dataPreparation as dataPreparation
+from message import sendMessage as sendMessage
 
 app = Flask(__name__)
 
-#CHAVES
-EVOLUTION_API_URL = os.getenv("EVOLUTION_API_URL")
-EVOLUTION_API_KEY = os.getenv("EVOLUTION_API_KEY")
-EVOLUTION_INSTANCE = os.getenv("EVOLUTION_INSTANCE")
+
 
 connectSheet.connect_to_sheets()
 
@@ -32,13 +30,13 @@ def generate_summary_report(user_phone, start_date, end_date, title):
     try:
         user_df = dataPreparation.get_user_data(user_phone)
         if user_df is None:
-            send_whatsapp_message(user_phone, "Não encontrei gastos registrados para o período solicitado.")
+            sendMessage.send_whatsapp_message(user_phone, "Não encontrei gastos registrados para o período solicitado.")
             return
 
         period_df = user_df[(user_df['Data'] >= start_date) & (user_df['Data'] <= end_date)]
 
         if period_df.empty:
-            send_whatsapp_message(user_phone, "Você não teve nenhum gasto registrado no período solicitado.")
+            sendMessage.send_whatsapp_message(user_phone, "Você não teve nenhum gasto registrado no período solicitado.")
             return
 
         expenses_by_category = period_df.groupby('Categoria')['Valor'].sum()
@@ -54,11 +52,11 @@ def generate_summary_report(user_phone, start_date, end_date, title):
         report_lines.append(f"*Total Gasto no Período: R$ {total_spent_br}*")
 
         final_report = "\n".join(report_lines)
-        send_whatsapp_message(user_phone, final_report)
+        sendMessage.send_whatsapp_message(user_phone, final_report)
         print(f"Relatório resumido enviado para {user_phone}.")
     except Exception as e:
         print(f"Erro ao gerar relatório resumido: {e}")
-        send_whatsapp_message(user_phone, "Desculpe, não consegui gerar seu relatório.")
+        sendMessage.send_whatsapp_message(user_phone, "Desculpe, não consegui gerar seu relatório.")
 
 
 #GERA OS EXTRATOS
@@ -67,13 +65,13 @@ def generate_detailed_statement(user_phone, start_date, end_date, title):
     try:
         user_df = dataPreparation.get_user_data(user_phone)
         if user_df is None:
-            send_whatsapp_message(user_phone, "Não encontrei gastos registrados para o período solicitado.")
+            sendMessage.send_whatsapp_message(user_phone, "Não encontrei gastos registrados para o período solicitado.")
             return
 
         statement_df = user_df[(user_df['Data'] >= start_date) & (user_df['Data'] <= end_date)]
 
         if statement_df.empty:
-            send_whatsapp_message(user_phone, "Você não teve nenhum gasto registrado no período solicitado.")
+            sendMessage.send_whatsapp_message(user_phone, "Você não teve nenhum gasto registrado no período solicitado.")
             return
 
         statement_df = statement_df.sort_values(by='Data')
@@ -92,37 +90,12 @@ def generate_detailed_statement(user_phone, start_date, end_date, title):
         report_lines.append(f"*Total do Período: R$ {total_spent_br}*")
 
         final_report = "\n".join(report_lines)
-        send_whatsapp_message(user_phone, final_report)
+        sendMessage.send_whatsapp_message(user_phone, final_report)
         print(f"Extrato detalhado enviado para {user_phone}.")
     except Exception as e:
         print(f"Erro ao gerar extrato detalhado: {e}")
-        send_whatsapp_message(user_phone, "Desculpe, não consegui gerar seu extrato.")
+        sendMessage.send_whatsapp_message(user_phone, "Desculpe, não consegui gerar seu extrato.")
 
-# FUNÇÃO DE ENVIO DE MENSAGEM
-def send_whatsapp_message(to_number, message_text):
-    """Envia uma mensagem de texto via Evolution API."""
-    url = f"{EVOLUTION_API_URL}/message/sendText/{EVOLUTION_INSTANCE}"
-    headers = {
-        "apikey": EVOLUTION_API_KEY,
-        "Content-Type": "application/json",
-    }
-    # Formato do corpo da mensagem
-    data = {
-        "number": to_number,
-        "textMessage": {
-            "text": message_text
-        }
-    }
-    try:
-        response = requests.post(url, headers=headers, json=data)
-        response.raise_for_status()
-        print(f"Mensagem enviada para {to_number}: {response.json()}")
-        return True
-    except requests.exceptions.RequestException as e:
-        print(f"Erro ao enviar mensagem via Evolution API: {e}")
-        if e.response is not None:
-            print(f"Detalhes do erro: {e.response.text}")
-        return False
 
 #Função para verificar se é um novo usuário.
 def is_new_user(user_phone):
@@ -179,7 +152,7 @@ def add_expense_to_sheet(user_phone, message_body):
 #SALVA O FEEDBACK NA PLANILHA
 def handle_feedback_submission(user_phone, feedback_text):
     if not connectSheet.sheet_ratings:
-        send_whatsapp_message(user_phone, "Ocorreu um erro ao salvar seu feedback. Tente novamente mais tarde.")
+        sendMessage.send_whatsapp_message(user_phone, "Ocorreu um erro ao salvar seu feedback. Tente novamente mais tarde.")
         return
     try:
         # Encontra a última avaliação feita pelo usuário para adicionar o feedback
@@ -188,9 +161,9 @@ def handle_feedback_submission(user_phone, feedback_text):
             last_rating_row = user_cells[-1].row
             # A coluna 'Feedback' é a 4ª coluna (D)
             connectSheet.sheet_ratings.update_cell(last_rating_row, 4, feedback_text)
-            send_whatsapp_message(user_phone, "Obrigado! Seu feedback foi registrado e nos ajudará a melhorar. 😊")
+            sendMessage.send_whatsapp_message(user_phone, "Obrigado! Seu feedback foi registrado e nos ajudará a melhorar. 😊")
         else:
-            send_whatsapp_message(user_phone, "Não encontrei uma avaliação recente para associar a este feedback.")
+            sendMessage.send_whatsapp_message(user_phone, "Não encontrei uma avaliação recente para associar a este feedback.")
     except Exception as e:
         print(f"Erro ao salvar feedback de {user_phone}: {e}")
 
@@ -245,7 +218,7 @@ def check_spending_goal(user_phone):
                 f"Você atingiu *100%* da sua meta mensal de R$ {goal_amount:,.2f}!\n\n"
                 f"Total gasto no mês: *R$ {total_spent:,.2f}*".replace(',', '.')
             )
-            send_whatsapp_message(user_phone, alert_text)
+            sendMessage.send_whatsapp_message(user_phone, alert_text)
             connectSheet.sheet_goals.update_cell(goal_row_index, 6, 'TRUE') # Atualiza a coluna F
 
         # Se o de 100% não foi enviado, verifica o de 80%
@@ -255,7 +228,7 @@ def check_spending_goal(user_phone):
                 f"Você já ultrapassou *80%* da sua meta mensal de R$ {goal_amount:,.2f}!\n\n"
                 f"Total gasto no mês: *R$ {total_spent:,.2f}*".replace(',', '.')
             )
-            send_whatsapp_message(user_phone, alert_text)
+            sendMessage.send_whatsapp_message(user_phone, alert_text)
             connectSheet.sheet_goals.update_cell(goal_row_index, 4, 'TRUE')
 
         # Se os outros não foram enviados, verifica o de 50%
@@ -265,7 +238,7 @@ def check_spending_goal(user_phone):
                 f"Você já ultrapassou *50%* da sua meta mensal de R$ {goal_amount:,.2f}!\n\n"
                 f"Total gasto no mês: *R$ {total_spent:,.2f}*".replace(',', '.')
             )
-            send_whatsapp_message(user_phone, alert_text)
+            sendMessage.send_whatsapp_message(user_phone, alert_text)
             connectSheet.sheet_goals.update_cell(goal_row_index, 3, 'TRUE')
 
     except Exception as e:
@@ -327,7 +300,7 @@ def webhook():
                 state = state_info.get('state')
                 
                 if message_body in cancel_words:
-                    send_whatsapp_message(user_phone, "Ok, operação cancelada. 👍")
+                    sendMessage.send_whatsapp_message(user_phone, "Ok, operação cancelada. 👍")
                     sheetState.clear_user_state(user_phone)
                     return
 
@@ -335,9 +308,9 @@ def webhook():
                     if connectSheet.sheet_suggestions:
                         # Salva a sugestão na planilha
                         connectSheet.sheet_suggestions.append_row([user_phone, datetime.now().strftime('%d/%m/%Y'), message_body])
-                        send_whatsapp_message(user_phone, "✅ Obrigado! Sua sugestão foi registrada com sucesso e será analisada pela nossa equipe.")
+                        sendMessage.send_whatsapp_message(user_phone, "✅ Obrigado! Sua sugestão foi registrada com sucesso e será analisada pela nossa equipe.")
                     else:
-                        send_whatsapp_message(user_phone, "😕 Desculpe, ocorreu um erro interno ao salvar sua sugestão. Tente novamente mais tarde.")
+                        sendMessage.send_whatsapp_message(user_phone, "😕 Desculpe, ocorreu um erro interno ao salvar sua sugestão. Tente novamente mais tarde.")
                     sheetState.clear_user_state(user_phone)
 
 
@@ -357,12 +330,12 @@ def webhook():
                             else: # Se for novo, adiciona
                                 connectSheet.sheet_goals.append_row([user_phone, goal_value, current_month_str, 'FALSE', 'FALSE'])
 
-                            send_whatsapp_message(user_phone, f"✅ Sua nova meta de gastos mensais foi definida para *R$ {goal_value:,.2f}*.".replace(',', '.'))
+                            sendMessage.send_whatsapp_message(user_phone, f"✅ Sua nova meta de gastos mensais foi definida para *R$ {goal_value:,.2f}*.".replace(',', '.'))
                             sheetState.clear_user_state(user_phone)
                         else:
-                            send_whatsapp_message(user_phone, "Por favor, envie um valor positivo para a meta.")
+                            sendMessage.send_whatsapp_message(user_phone, "Por favor, envie um valor positivo para a meta.")
                     except ValueError:
-                        send_whatsapp_message(user_phone, "Valor inválido. Por favor, envie apenas o número da sua meta (ex: 1500.50).")
+                        sendMessage.send_whatsapp_message(user_phone, "Valor inválido. Por favor, envie apenas o número da sua meta (ex: 1500.50).")
 
                 elif state == 'awaiting_week_choice':
                     start_date, end_date = None, None
@@ -382,7 +355,7 @@ def webhook():
                             generate_detailed_statement(user_phone, start_date, end_date, title)
                         sheetState.clear_user_state(user_phone)
                     else:
-                        send_whatsapp_message(user_phone, "Opção inválida. Por favor, responda com 'esta semana' ou 'semana anterior'.")
+                        sendMessage.send_whatsapp_message(user_phone, "Opção inválida. Por favor, responda com 'esta semana' ou 'semana anterior'.")
 
 
                 # --- FLUXO DE ESCOLHA DO MÊS ---
@@ -404,7 +377,7 @@ def webhook():
                             generate_detailed_statement(user_phone, start_date, end_date, title)
                         sheetState.clear_user_state(user_phone)
                     else:
-                        send_whatsapp_message(user_phone, "Opção inválida. Por favor, responda com 'este mês' ou 'mês anterior'.")
+                        sendMessage.send_whatsapp_message(user_phone, "Opção inválida. Por favor, responda com 'este mês' ou 'mês anterior'.")
 
                 elif state == 'awaiting_rating':
                     try:
@@ -415,52 +388,52 @@ def webhook():
                             # Salva a nota na planilha de avaliações
                             connectSheet.sheet_ratings.append_row([user_phone, datetime.now().strftime('%d/%m/%Y'), rating, ''])
                             if rating <= 3:
-                                send_whatsapp_message(user_phone, "Obrigado pela sua nota. Gostaríamos de saber mais. Você gostaria de deixar um feedback para nos ajudar a melhorar? (Responda com seu feedback ou 'não')")
+                                sendMessage.send_whatsapp_message(user_phone, "Obrigado pela sua nota. Gostaríamos de saber mais. Você gostaria de deixar um feedback para nos ajudar a melhorar? (Responda com seu feedback ou 'não')")
                                 sheetState.set_user_state(user_phone, {'state': 'awaiting_feedback'}) # Muda o estado para aguardar o feedback
                             else:
-                                send_whatsapp_message(user_phone, "Ficamos felizes com a sua nota! Obrigado por avaliar nosso sistema. 😄")
+                                sendMessage.send_whatsapp_message(user_phone, "Ficamos felizes com a sua nota! Obrigado por avaliar nosso sistema. 😄")
                                 sheetState.clear_user_state(user_phone) # Finaliza o estado de avaliação
                         else:
-                            send_whatsapp_message(user_phone, "Nota inválida. Por favor, envie um número de 0 a 5.")
+                            sendMessage.send_whatsapp_message(user_phone, "Nota inválida. Por favor, envie um número de 0 a 5.")
                     except ValueError:
-                        send_whatsapp_message(user_phone, "Por favor, envie apenas o número da sua nota (de 0 a 5).")
+                        sendMessage.send_whatsapp_message(user_phone, "Por favor, envie apenas o número da sua nota (de 0 a 5).")
 
                 elif state == 'awaiting_feedback':
                     if message_body not in ['nao', 'não', "n"]:
                         handle_feedback_submission(user_phone, message_body)
                     else:
-                        send_whatsapp_message(user_phone, "Entendido. Agradecemos sua avaliação mesmo assim!")
+                        sendMessage.send_whatsapp_message(user_phone, "Entendido. Agradecemos sua avaliação mesmo assim!")
                     sheetState.clear_user_state(user_phone) # Finaliza o estado de avaliação
 
                 return jsonify({"status": "OK"}), 200 # Finaliza o processamento aqui
 
 
             if  message_body in suggestion:
-                send_whatsapp_message(user_phone, "Ficamos felizes em ouvir sua opinião! Por favor, envie sua sugestão de melhoria em uma única mensagem.")
+                sendMessage.send_whatsapp_message(user_phone, "Ficamos felizes em ouvir sua opinião! Por favor, envie sua sugestão de melhoria em uma única mensagem.")
                 sheetState.set_user_state(user_phone, {'state': 'awaiting_suggestion'})
 
             elif  message_body in goal:
-                send_whatsapp_message(user_phone, "Qual valor você gostaria de definir como sua meta de gastos mensais?")
+                sendMessage.send_whatsapp_message(user_phone, "Qual valor você gostaria de definir como sua meta de gastos mensais?")
                 sheetState.set_user_state(user_phone, {'state': 'awaiting_goal_amount'})
 
             elif message_body in assessment:
-                send_whatsapp_message(user_phone, "Que bom que você quer nos avaliar! Por favor, envie uma nota de 0 a 5 para o sistema.")
+                sendMessage.send_whatsapp_message(user_phone, "Que bom que você quer nos avaliar! Por favor, envie uma nota de 0 a 5 para o sistema.")
                 sheetState.set_user_state(user_phone, {'state': 'awaiting_rating'})
 
             elif message_body in weeklyStatement:
-                send_whatsapp_message(user_phone, "Você gostaria do extrato desta semana ou da semana anterior?")
+                sendMessage.send_whatsapp_message(user_phone, "Você gostaria do extrato desta semana ou da semana anterior?")
                 sheetState.set_user_state(user_phone, {'state': 'awaiting_week_choice', 'type': 'detailed', 'title': 'Extrato Semanal'})
 
             elif message_body in monthlyStatement:
-                send_whatsapp_message(user_phone, "Você gostaria do extrato deste mês ou do mês anterior?")
+                sendMessage.send_whatsapp_message(user_phone, "Você gostaria do extrato deste mês ou do mês anterior?")
                 sheetState.set_user_state(user_phone, {'state': 'awaiting_month_choice', 'type': 'detailed', 'title': 'Extrato Mensal'})
 
             elif message_body in weeklyReport:
-                send_whatsapp_message(user_phone, "Você gostaria do relatório desta semana ou da semana anterior?")
+                sendMessage.send_whatsapp_message(user_phone, "Você gostaria do relatório desta semana ou da semana anterior?")
                 sheetState.set_user_state(user_phone, {'state': 'awaiting_week_choice', 'type': 'summary', 'title': 'Relatório Semanal'})
 
             elif message_body in monthlyReport:
-                send_whatsapp_message(user_phone, "Você gostaria do relatório deste mês ou do mês anterior?")
+                sendMessage.send_whatsapp_message(user_phone, "Você gostaria do relatório deste mês ou do mês anterior?")
                 sheetState.set_user_state(user_phone, {'state': 'awaiting_month_choice', 'type': 'summary', 'title': 'Relatório Mensal'})
 
             elif message_body in greetings:
@@ -484,7 +457,7 @@ def webhook():
                         "7 - Sugestão/Feedback\n\n"
                         "O sistema ainda está em teste então pode ocorrer alguns bugs."
                     )
-                    send_whatsapp_message(user_phone, welcome_text)
+                    sendMessage.send_whatsapp_message(user_phone, welcome_text)
 
                 else:
                     # Mensagem para usuários EXISTENTES que mandam 'oi'
@@ -503,18 +476,18 @@ def webhook():
                         "7 - Sugestão/Feedback\n\n"
 
                     )
-                    send_whatsapp_message(user_phone, refresher_text)
+                    sendMessage.send_whatsapp_message(user_phone, refresher_text)
 
             elif message_body: # <<< Se não for saudação, processa como gasto
                 response_text = add_expense_to_sheet(user_phone, message_body)
-                send_whatsapp_message(user_phone, response_text)
+                sendMessage.send_whatsapp_message(user_phone, response_text)
 
     except Exception as e:
         print(f"Erro ao processar webhook: Estrutura de dados inesperada. Erro: \n\n{e}")
         # Tenta notificar o usuário que algo deu errado, se possível
         try:
             user_phone = request.get_json()['data']['key']['remoteJid'].split('@')[0]
-            send_whatsapp_message(user_phone, "😕 Ops! Ocorreu um erro interno ao processar sua mensagem. A equipe já foi notificada.")
+            sendMessage.send_whatsapp_message(user_phone, "😕 Ops! Ocorreu um erro interno ao processar sua mensagem. A equipe já foi notificada.")
         except:
             pass # Ignora se nem conseguir extrair o número do usuário
 
