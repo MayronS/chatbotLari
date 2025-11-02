@@ -18,6 +18,7 @@ from sheet import dataPreparation as dataPreparation
 from message import sendMessage as sendMessage
 from report import generateReport as generateReport
 from extract import generateExtract as generateExtract
+from user import newUser as newUser
 
 app = Flask(__name__)
 
@@ -26,16 +27,6 @@ app = Flask(__name__)
 connectSheet.connect_to_sheets()
 
 
-#Função para verificar se é um novo usuário.
-def is_new_user(user_phone):
-    try:
-        # findall procura por uma string em toda a planilha.
-        # Se não encontrar nada, a lista estará vazia.
-        found_cells = connectSheet.sheet.findall(user_phone)
-        return len(found_cells) == 0
-    except Exception as e:
-        print(f"Erro ao verificar se o usuário é novo: {e}")
-        return False
 
 # PROCESSA A MENSAGEM E ADICIONA OS DADOS A PLANILHA
 def add_expense_to_sheet(user_phone, message_body):
@@ -366,7 +357,7 @@ def webhook():
                 sheetState.set_user_state(user_phone, {'state': 'awaiting_month_choice', 'type': 'summary', 'title': 'Relatório Mensal'})
 
             elif message_body in greetings:
-                if is_new_user(user_phone):
+                if newUser.is_new_user(user_phone):
                     # Mensagem para NOVOS usuários
                     welcome_text = (
                         "Olá! 👋 Bem-vindo(a) ao seu Gerenciador de Gastos Pessoal.\n\n"
