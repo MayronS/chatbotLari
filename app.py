@@ -19,6 +19,7 @@ from message import sendMessage as sendMessage
 from report import generateReport as generateReport
 from extract import generateExtract as generateExtract
 from user import newUser as newUser
+from feedback import saveFeedback as saveFeedback
 
 app = Flask(__name__)
 
@@ -69,23 +70,6 @@ def add_expense_to_sheet(user_phone, message_body):
         return "😕 Ocorreu um erro interno. Tente novamente."
 
 
-#SALVA O FEEDBACK NA PLANILHA
-def handle_feedback_submission(user_phone, feedback_text):
-    if not connectSheet.sheet_ratings:
-        sendMessage.send_whatsapp_message(user_phone, "Ocorreu um erro ao salvar seu feedback. Tente novamente mais tarde.")
-        return
-    try:
-        # Encontra a última avaliação feita pelo usuário para adicionar o feedback
-        user_cells = connectSheet.sheet_ratings.findall(str(user_phone))
-        if user_cells:
-            last_rating_row = user_cells[-1].row
-            # A coluna 'Feedback' é a 4ª coluna (D)
-            connectSheet.sheet_ratings.update_cell(last_rating_row, 4, feedback_text)
-            sendMessage.send_whatsapp_message(user_phone, "Obrigado! Seu feedback foi registrado e nos ajudará a melhorar. 😊")
-        else:
-            sendMessage.send_whatsapp_message(user_phone, "Não encontrei uma avaliação recente para associar a este feedback.")
-    except Exception as e:
-        print(f"Erro ao salvar feedback de {user_phone}: {e}")
 
 #FUNÇÃO PARA VERIFICAR ALERTA
 def check_spending_goal(user_phone):
@@ -320,7 +304,7 @@ def webhook():
 
                 elif state == 'awaiting_feedback':
                     if message_body not in ['nao', 'não', "n"]:
-                        handle_feedback_submission(user_phone, message_body)
+                        saveFeedback.handle_feedback_submission(user_phone, message_body)
                     else:
                         sendMessage.send_whatsapp_message(user_phone, "Entendido. Agradecemos sua avaliação mesmo assim!")
                     sheetState.clear_user_state(user_phone) # Finaliza o estado de avaliação
