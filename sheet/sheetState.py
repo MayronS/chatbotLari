@@ -1,6 +1,7 @@
 import json
 from . import connectSheet
 
+    #FUNÇÕES PARA GERENCIAR O ESTADO NA PLANILHA
 def set_user_state(user_phone, state_data):
     try:
         cell = connectSheet.sheet_states.find(str(user_phone))

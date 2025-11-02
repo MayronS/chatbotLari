@@ -14,6 +14,7 @@ load_dotenv()
 
 from sheet import connectSheet as connectSheet
 from sheet import sheetState as sheetState
+from sheet import dataPreparation as dataPreparation
 
 app = Flask(__name__)
 
@@ -24,41 +25,12 @@ EVOLUTION_INSTANCE = os.getenv("EVOLUTION_INSTANCE")
 
 connectSheet.connect_to_sheets()
 
-    #FUNÇÕES PARA GERENCIAR O ESTADO NA PLANILHA
-    
-
-    #BUSCA OS DADOS E PREPARA
-def get_user_data(user_phone):
-    records = connectSheet.sheet.get_all_records(value_render_option='UNFORMATTED_VALUE')
-    if not records:
-        return None # Retorna None se não houver registros
-
-    df = pd.DataFrame(records)
-
-    # Converte a coluna 'Identificador' para string para uma comparação segura
-    df['Identificador'] =pd.to_numeric(df['Identificador'], errors='coerce').astype('Int64').astype(str)
-
-    user_phone_str = str(user_phone).strip()
-    user_df = df[df['Identificador'] == user_phone_str].copy()
-
-    if user_df.empty:
-        return None # Retorna None se o usuário não tiver registros
-
-    # Limpeza e preparação dos dados
-    user_df['Valor'] = user_df['Valor'].astype(str).str.replace(',', '.', regex=False)
-    user_df['Valor'] = pd.to_numeric(user_df['Valor'], errors='coerce')
-    user_df.dropna(subset=['Valor'], inplace=True)
-    user_df['Data'] = pd.to_datetime(user_df['Data'], dayfirst=True, errors='coerce')
-    user_df.dropna(subset=['Data'], inplace=True)
-
-    return user_df
-
 
 #FUNÇÃO PARA GERAR O RELATORIO
 def generate_summary_report(user_phone, start_date, end_date, title):
     print(f"Iniciando geração de relatório resumido para {user_phone}...")
     try:
-        user_df = get_user_data(user_phone)
+        user_df = dataPreparation.get_user_data(user_phone)
         if user_df is None:
             send_whatsapp_message(user_phone, "Não encontrei gastos registrados para o período solicitado.")
             return
@@ -93,7 +65,7 @@ def generate_summary_report(user_phone, start_date, end_date, title):
 def generate_detailed_statement(user_phone, start_date, end_date, title):
     print(f"Iniciando geração de extrato detalhado para {user_phone}...")
     try:
-        user_df = get_user_data(user_phone)
+        user_df = dataPreparation.get_user_data(user_phone)
         if user_df is None:
             send_whatsapp_message(user_phone, "Não encontrei gastos registrados para o período solicitado.")
             return
@@ -255,7 +227,7 @@ def check_spending_goal(user_phone):
             alert_100_sent = 'FALSE'
 
         # 3. Calcula o total de gastos do mês
-        user_df = get_user_data(user_phone)
+        user_df = dataPreparation.get_user_data(user_phone)
         if user_df is None: return
 
         today = datetime.now()
