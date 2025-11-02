@@ -15,6 +15,7 @@ app = Flask(__name__)
 
 connectSheet.connect_to_sheets()
 
+>>>>>>> 4169832 (Mudando de local função generate_summary_report)
 # WEBHOOK
 @app.route("/webhook", methods=["POST"])
 def webhook():
