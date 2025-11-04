@@ -269,6 +269,4 @@ def index():
 
 #EXECUÇÃO DO APP
 if __name__ == "__main__":
-    # O Flask roda na porta 5000 por padrão.
-    # O debug=True ajuda a ver erros, mas desative em produção.
-    app.run(debug=True)
+    app.run()
