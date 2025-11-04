@@ -1,13 +1,4 @@
-import os
-import json
-import requests
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
 from flask import Flask, request, jsonify
-from datetime import datetime
-from dateutil.relativedelta import relativedelta
-import pandas as pd
-import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 load_dotenv()
