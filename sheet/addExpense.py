@@ -33,10 +33,11 @@ def add_expense_to_sheet(user_phone, message_body):
 
         checkAlert.check_spending_goal(user_phone)
 
-        # Retorna a data completa para o usuário saber que o ano foi adicionado
+        # Retorna a data completa, valor e categoria para o usuário saber que o ano foi adicionado
         return f"✅ Gasto de R$ {value:.2f} na categoria '{category_str}' registrado para {date_str}!"
 
     except ValueError:
+        # Retorna um alerta para o usuário caso o formato esteja incorreto
         return "❌ Formato inválido. Use: Data - Valor - Categoria\nExemplo: 02/10 - 15,50 - Lanche"
     except Exception as e:
         print(f"Erro inesperado ao processar a despesa: {e}")

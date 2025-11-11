@@ -11,7 +11,6 @@ def handle_feedback_submission(user_phone, feedback_text):
         user_cells = connectSheet.sheet_ratings.findall(str(user_phone))
         if user_cells:
             last_rating_row = user_cells[-1].row
-            # A coluna 'Feedback' é a 4ª coluna (D)
             connectSheet.sheet_ratings.update_cell(last_rating_row, 4, feedback_text)
             sendMessage.send_whatsapp_message(user_phone, "Obrigado! Seu feedback foi registrado e nos ajudará a melhorar. 😊")
         else:

@@ -5,7 +5,7 @@ from . import connectSheet
 def set_user_state(user_phone, state_data):
     try:
         cell = connectSheet.sheet_states.find(str(user_phone))
-        state_str = json.dumps(state_data) # Converte o dicionário para texto
+        state_str = json.dumps(state_data)
         if cell:
             connectSheet.sheet_states.update_cell(cell.row, 2, state_str)
         else:
@@ -21,7 +21,7 @@ def get_user_state(user_phone):
             state_str = connectSheet.sheet_states.cell(cell.row, 2).value
             if state_str:
                 print(f"Estado de {user_phone} encontrado: {state_str}")
-                return json.loads(state_str) # Converte o texto de volta para dicionário
+                return json.loads(state_str)
         return None
     except Exception as e:
         print(f"Erro ao buscar estado para {user_phone}: {e}")

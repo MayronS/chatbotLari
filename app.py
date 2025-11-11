@@ -174,7 +174,7 @@ def webhook():
                         sendMessage.send_whatsapp_message(user_phone, "Entendido. Agradecemos sua avaliação mesmo assim!")
                     sheetState.clear_user_state(user_phone) # Finaliza o estado de avaliação
 
-                return jsonify({"status": "OK"}), 200 # Finaliza o processamento aqui
+                return jsonify({"status": "OK"}), 200
 
 
             if  message_body in suggestion:
@@ -229,7 +229,7 @@ def webhook():
                     sendMessage.send_whatsapp_message(user_phone, welcome_text)
 
                 else:
-                    # Mensagem para usuários EXISTENTES que mandam 'oi'
+                    # Mensagem para usuários EXISTENTES
                     refresher_text = (
                         "Olá de novo! 😊\n\n"
                         "Lembrete: para registrar um gasto, use o formato:\n"
@@ -247,13 +247,13 @@ def webhook():
                     )
                     sendMessage.send_whatsapp_message(user_phone, refresher_text)
 
-            elif message_body: # <<< Se não for saudação, processa como gasto
+            elif message_body: # Se não for saudação, processa como gasto
                 response_text = addExpense.add_expense_to_sheet(user_phone, message_body)
                 sendMessage.send_whatsapp_message(user_phone, response_text)
 
     except Exception as e:
         print(f"Erro ao processar webhook: Estrutura de dados inesperada. Erro: \n\n{e}")
-        # Tenta notificar o usuário que algo deu errado, se possível
+        # Tenta notificar o usuário que algo deu errado
         try:
             user_phone = request.get_json()['data']['key']['remoteJid'].split('@')[0]
             sendMessage.send_whatsapp_message(user_phone, "😕 Ops! Ocorreu um erro interno ao processar sua mensagem. A equipe já foi notificada.")
@@ -262,11 +262,9 @@ def webhook():
 
     return jsonify({"status": "OK"}), 200
 
-#PÁGINA INICIAL
 @app.route("/")
 def index():
     return "<h1>Servidor do Chatbot de Gastos está no ar!</h1>"
 
-#EXECUÇÃO DO APP
 if __name__ == "__main__":
     app.run()
