@@ -109,6 +109,7 @@ def add_expense_to_sheet(user_phone, message_body):
         return f"✅ Gasto de R$ {value:.2f} na categoria '{category_str}' registrado para {date_str}!"
 
     except ValueError:
+        # Retorna um alerta para o usuário caso o formato esteja incorreto
         return "❌ Formato inválido. Use: Data - Valor - Categoria\nExemplo: 02/10 - 15,50 - Lanche"
 >>>>>>> d095e18 (Mudando de local função add_expense_to_sheet)
     except Exception as e:
