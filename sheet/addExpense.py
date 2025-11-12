@@ -7,7 +7,6 @@ def add_expense_to_sheet(user_phone, message_body):
     if not connectSheet.sheet:
         return "Desculpe, estou com problemas para acessar a planilha no momento."
     try:
-<<<<<<< HEAD
         date_str = None
         value_str = None
         category_str = None
@@ -69,7 +68,6 @@ def add_expense_to_sheet(user_phone, message_body):
         if not category_str:
             return "❌ Categoria não informada. Por favor, informe uma categoria."
         
-=======
         parts = [item.strip() for item in message_body.split('-')]
         date_str, value_str, category_str = parts
 
@@ -91,27 +89,20 @@ def add_expense_to_sheet(user_phone, message_body):
             return f"❌ Formato de data inválido: '{date_str}'. Use DD/MM ou DD/MM/AAAA."
 
         value = float(value_str.replace(',', '.'))
->>>>>>> d095e18 (Mudando de local função add_expense_to_sheet)
         new_row = [user_phone, date_str, value, category_str, datetime.now().strftime('%Y-%m-%d')]
         connectSheet.sheet.append_row(new_row)
 
         checkAlert.check_spending_goal(user_phone)
-
-<<<<<<< HEAD
         # Retorna a data completa, valor e categoria para o usuário saber que o ano foi adicionado
         return f"✅ Gasto de R$ {value:.2f} na categoria '{category_str}' registrado para {date_str}!"
 
     except ValueError:
         # Retorna um alerta para o usuário caso o formato esteja incorreto
         return "❌ Formato inválido. Use um dos formatos abaixo:\n Data - Valor - Categoria\n Data Valor Categoria\n para compras de hoje, use:\n Valor Categoria\nValor - Categoria"
-=======
-        # Retorna a data completa para o usuário saber que o ano foi adicionado
-        return f"✅ Gasto de R$ {value:.2f} na categoria '{category_str}' registrado para {date_str}!"
 
     except ValueError:
         # Retorna um alerta para o usuário caso o formato esteja incorreto
         return "❌ Formato inválido. Use: Data - Valor - Categoria\nExemplo: 02/10 - 15,50 - Lanche"
->>>>>>> d095e18 (Mudando de local função add_expense_to_sheet)
     except Exception as e:
         print(f"Erro inesperado ao processar a despesa: {e}")
         return "😕 Ocorreu um erro interno. Tente novamente."
