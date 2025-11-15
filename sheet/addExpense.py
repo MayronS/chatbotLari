@@ -81,5 +81,5 @@ def add_expense_to_sheet(user_phone, message_body):
     except Exception as e:
         # Erro inesperado
         print(f"Erro inesperado ao processar a despesa: {e}")
-        return "❌ Formato inválido. Use um dos formatos:\nData - Valor - Categoria (ex: 02/10 - 15,50 - Lanche)\nData Valor Categoria (ex: 02/10 15,50 Lanche)\nValor Categoria (ex: 15,50 Lanche ou 15,50 - Lanche)"
+        return "❌ Formato inválido. Use um dos formatos:\nData - Valor - Categoria (ex: 02/10 - 15,50 - Lanche)\nData Valor Categoria (ex: 02/10 15,50 Lanche)\nValor Categoria (ex: 15,50 Lanche ou 15,50 - Lanche)\n\nPara voltar ao menu principal, envie 'menu'."
 
