@@ -19,7 +19,7 @@ def _parse_expense_string(expense_string):
         
         if not date_str:
             return None, None, None
-      
+
         # Completa o ano se necessário
         date_parts = date_str.split('/')
         if len(date_parts) == 2:
@@ -57,6 +57,8 @@ def delete_expense_from_sheet(user_phone, expense_string):
         
         rows_to_delete = []
         
+        user_value_float = float(value_str)
+        
         for cell in user_cells:
             try:
                 row_data = sheet.row_values(cell.row)
@@ -65,8 +67,10 @@ def delete_expense_from_sheet(user_phone, expense_string):
                 sheet_value = str(row_data[2]).replace(',', '.')
                 sheet_category = str(row_data[3]).lower()
                 
+                sheet_value_float = float(sheet_value)
+                
                 if (sheet_date == date_str and 
-                    sheet_value == value_str and 
+                    sheet_value_float == user_value_float and 
                     sheet_category == category_str):
                     
                     rows_to_delete.append(cell.row)

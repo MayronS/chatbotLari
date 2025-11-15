@@ -13,7 +13,7 @@ def connect_to_sheets():
     global sheet, sheet_ratings, sheet_goals, sheet_suggestions, sheet_states
     try:
         SCOPE = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/drive']
-        CREDS = ServiceAccountCredentials.from_json_keyfile_name("/credentials.json", SCOPE)
+        CREDS = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", SCOPE)
         gclient = gspread.authorize(CREDS)
 
         # Conecta à planilha de gastos

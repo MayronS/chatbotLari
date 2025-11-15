@@ -70,21 +70,6 @@ def webhook():
             if state_info:
                 state = state_info.get('state')
                 
-                if message_body in cancel_words:
-                    sendMessage.send_whatsapp_message(user_phone, "Ok, operação cancelada. 👍")
-                    sheetState.clear_user_state(user_phone)
-                    return
-
-                if message_body.split(' ')[0] in delete_commands:
-                    try:
-                        # Pega a despesa a ser apagada
-                        expense_string_to_delete = message_body.split(' ', 1)[1]
-                        response_text = deleteExpense.delete_expense_from_sheet(user_phone, expense_string_to_delete)
-                    except IndexError:
-                        # O usuário digitou apenas "apagar"
-                        response_text = "Para apagar, envie o comando com os dados da despesa.\nEx: `apagar 08/10 20 lanche`"
-                        
-                sendMessage.send_whatsapp_message(user_phone, response_text)
                 if state == 'awaiting_suggestion':
                     if connectSheet.sheet_suggestions:
                         # Salva a sugestão na planilha
@@ -188,8 +173,22 @@ def webhook():
 
                 return jsonify({"status": "OK"}), 200
 
-
-            if  message_body in suggestion:
+            if message_body in cancel_words:
+                sendMessage.send_whatsapp_message(user_phone, "Ok, operação cancelada. 👍")
+                sheetState.clear_user_state(user_phone)
+                return jsonify({"status": "OK"}), 200
+            
+            elif message_body.split(' ')[0] in delete_commands:
+                try:
+                    # Pega a despesa a ser apagada
+                    expense_string_to_delete = message_body.split(' ', 1)[1]
+                    response_text = deleteExpense.delete_expense_from_sheet(user_phone, expense_string_to_delete)
+                except IndexError:
+                    # O usuário digitou apenas "apagar"
+                    response_text = "Para apagar, envie o comando com os dados da despesa.\nEx: `apagar 08/10 20 lanche`"
+                sendMessage.send_whatsapp_message(user_phone, response_text)
+                
+            elif  message_body in suggestion:
                 sendMessage.send_whatsapp_message(user_phone, "Ficamos felizes em ouvir sua opinião! Por favor, envie sua sugestão de melhoria em uma única mensagem.")
                 sheetState.set_user_state(user_phone, {'state': 'awaiting_suggestion'})
 
