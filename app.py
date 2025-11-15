@@ -35,7 +35,7 @@ def webhook():
 
 
             # VARIAVEIS PARA VERIFICAR ENTRADAS
-            greetings = ["oi", "oie", "lari","bot", "ola", "olá", "bom dia", "boa tarde", "boa noite", "eai", "opa", "menu","ajuda"]
+            greetings = ["oi", "oie", "lari","bot", "ola", "olá", "bom dia", "boa tarde", "boa noite", "eai", "opa", "menu","ajuda","cardapio"]
 
             weeklyReport = ["relatorio semanal", "relatório semanal", "1", "01"]
 
