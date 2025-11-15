@@ -6,6 +6,7 @@ from alert import checkAlert
 def add_expense_to_sheet(user_phone, message_body):
     if not connectSheet.sheet:
         return "Desculpe, estou com problemas para acessar a planilha no momento."
+    response_text = ""
     try:
         date_str = None
         value_str = None
@@ -15,6 +16,7 @@ def add_expense_to_sheet(user_phone, message_body):
         if '-' in message_body:
 
             parts = [item.strip() for item in message_body.split('-')]
+            
             # FORMATO: "data - valor - categoria"
             if len(parts) == 3:
                 date_str, value_str, category_str = parts
@@ -73,13 +75,19 @@ def add_expense_to_sheet(user_phone, message_body):
         # Tudo válido: grava na planilha
         new_row = [user_phone, date_str, value, category_str.strip(), datetime.now().strftime('%Y-%m-%d')]
         connectSheet.sheet.append_row(new_row)
-
         checkAlert.check_spending_goal(user_phone)
+        
         # Retorna a data completa, valor e categoria para o usuário saber que o ano foi adicionado
-        return f"✅ Gasto de R$ {value:.2f} na categoria '{category_str}' registrado para {date_str}!"
-
+        response_text = f"✅ Gasto de R$ {value:.2f} na categoria '{category_str}' registrado para {date_str}!"
+        return response_text
+    except ValueError:
+            response_text = (
+                        "❌ Formato inválido. Use um dos formatos:\nData - Valor - Categoria (ex: 02/10 - 15,50 - Lanche)\nData Valor Categoria (ex: 02/10 15,50 Lanche)\nValor Categoria (ex: 15,50 Lanche ou 15,50 - Lanche)\n\nPara voltar ao menu principal, envie 'menu'."
+            )
+            return response_text
     except Exception as e:
         # Erro inesperado
         print(f"Erro inesperado ao processar a despesa: {e}")
-        return "❌ Formato inválido. Use um dos formatos:\nData - Valor - Categoria (ex: 02/10 - 15,50 - Lanche)\nData Valor Categoria (ex: 02/10 15,50 Lanche)\nValor Categoria (ex: 15,50 Lanche ou 15,50 - Lanche)\n\nPara voltar ao menu principal, envie 'menu'."
+        response_text = "❌ Desculpe, ocorreu um erro ao registrar sua despesa. Tente novamente mais tarde."
+        return response_text
 
