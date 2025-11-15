@@ -216,8 +216,8 @@ def webhook():
                         "Para compras feitas hoje:\n"
                         "*Valor - Categoria*\n"
                         "*Valor Categoria*\n\n"
-                        "Exemplo: `*29/09/2025 - 55,30 - Supermercado*`\n"
-                        "*30.00 Restaurante*\n\n"
+                        "Exemplo: `29/09/2025 - 55,30 - Supermercado`\n"
+                        "`30.00 Restaurante`\n\n"
                         "Pode começar quando quiser!\n"
 
                         "*Obs:* A opção de Categoria serve para separar o tipo de compra realizada, então você também pode substituir pelo nome do estabelecimento.\n\n"
@@ -243,8 +243,8 @@ def webhook():
                         "*Valor - Categoria*\n"
                         "*Valor Categoria*\n\n"
                         
-                        "Exemplos:\n `*29/09/2025 - 55,30 - Supermercado* `\n"
-                        "*30.00 Restaurante*\n\n"
+                        "Exemplos:\n `29/09/2025 - 55,30 - Supermercado`\n"
+                        "`30,00 Restaurante`\n\n"
                         "Menu de opções:\n\n"
                         "1 - Relatorio semanal\n"
                         "2 - Relatorio mensal\n"
