@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from dotenv import load_dotenv
 load_dotenv()
 
-from sheet import connectSheet,sheetState,addExpense
+from sheet import connectSheet,sheetState,addExpense,deleteExpense
 from message import sendMessage as sendMessage
 from report import generateReport as generateReport
 from extract import generateExtract as generateExtract
@@ -60,6 +60,8 @@ def webhook():
             current_month = ["este mês", "este mes", "este", "atual", "deste mes", "deste mês", "desse mês", "desse mes", "deste", "mês atual", "mes atual"]
 
             cancel_words = ["sair", "cancelar", "voltar", "volta", "cancela", "cancelamento", "pare", "interromper"]
+            
+            delete_commands = ["apagar", "excluir", "deletar", "remover"]
 
 
 
@@ -73,6 +75,16 @@ def webhook():
                     sheetState.clear_user_state(user_phone)
                     return
 
+                if message_body.split(' ')[0] in delete_commands:
+                    try:
+                        # Pega a despesa a ser apagada
+                        expense_string_to_delete = message_body.split(' ', 1)[1]
+                        response_text = deleteExpense.delete_expense_from_sheet(user_phone, expense_string_to_delete)
+                    except IndexError:
+                        # O usuário digitou apenas "apagar"
+                        response_text = "Para apagar, envie o comando com os dados da despesa.\nEx: `apagar 08/10 20 lanche`"
+                        
+                sendMessage.send_whatsapp_message(user_phone, response_text)
                 if state == 'awaiting_suggestion':
                     if connectSheet.sheet_suggestions:
                         # Salva a sugestão na planilha
@@ -216,8 +228,8 @@ def webhook():
                         "Para compras feitas hoje:\n"
                         "*Valor - Categoria*\n"
                         "*Valor Categoria*\n\n"
-                        "Exemplo: `29/09/2025 - 55,30 - Supermercado`\n"
-                        "`30.00 Restaurante`\n\n"
+                        "Exemplos:\n`29/09/2025 - 55,30 - Supermercado`\n"
+                        "`30,00 Restaurante`\n\n"
                         "Pode começar quando quiser!\n"
 
                         "*Obs:* A opção de Categoria serve para separar o tipo de compra realizada, então você também pode substituir pelo nome do estabelecimento.\n\n"
@@ -229,6 +241,7 @@ def webhook():
                         "5 - Definir meta\n"
                         "6 - Avaliar\n"
                         "7 - Sugestão/Feedback\n\n"
+                        "Para apagar uma despesa envie 'apagar' ou 'remover' seguido com as informações da despesa (ex: `apagar 08/10 20,00 lanche`)."
                     )
                     sendMessage.send_whatsapp_message(user_phone, welcome_text)
 
@@ -243,7 +256,7 @@ def webhook():
                         "*Valor - Categoria*\n"
                         "*Valor Categoria*\n\n"
                         
-                        "Exemplos:\n `29/09/2025 - 55,30 - Supermercado`\n"
+                        "Exemplos:\n`29/09/2025 - 55,30 - Supermercado`\n"
                         "`30,00 Restaurante`\n\n"
                         "Menu de opções:\n\n"
                         "1 - Relatorio semanal\n"
@@ -253,6 +266,7 @@ def webhook():
                         "5 - Definir meta\n"
                         "6 - Avaliar\n"
                         "7 - Sugestão/Feedback\n\n"
+                        "Para apagar uma despesa envie 'apagar' ou 'remover' seguido com as informações da despesa (ex: `apagar 08/10 20,00 lanche`)."
 
                     )
                     sendMessage.send_whatsapp_message(user_phone, refresher_text)
