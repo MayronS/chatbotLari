@@ -8,7 +8,8 @@ EVOLUTION_INSTANCE = os.getenv("EVOLUTION_INSTANCE")
 
 # FUNÇÃO DE ENVIO DE MENSAGEM
 def send_whatsapp_message(to_number, message_text):
-    """Envia uma mensagem de texto via Evolution API."""
+    
+    
     url = f"{EVOLUTION_API_URL}/message/sendText/{EVOLUTION_INSTANCE}"
     headers = {
         "apikey": EVOLUTION_API_KEY,

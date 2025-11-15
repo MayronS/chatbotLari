@@ -33,4 +33,4 @@ def generate_summary_report(user_phone, start_date, end_date, title):
         print(f"Relatório resumido enviado para {user_phone}.")
     except Exception as e:
         print(f"Erro ao gerar relatório resumido: {e}")
-        sendMessage.send_whatsapp_message(user_phone, "Desculpe, não consegui gerar seu relatório.")
+        sendMessage.send_whatsapp_message(user_phone, "Desculpe, não consegui gerar seu relatório.\nTente novamente mais tarde.")

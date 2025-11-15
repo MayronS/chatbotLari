@@ -4,7 +4,6 @@ from message import sendMessage
 
 #GERA OS EXTRATOS
 def generate_detailed_statement(user_phone, start_date, end_date, title):
-    print(f"Iniciando geração de extrato detalhado para {user_phone}...")
     try:
         user_df = dataPreparation.get_user_data(user_phone)
         if user_df is None:

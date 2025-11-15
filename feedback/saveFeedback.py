@@ -14,7 +14,5 @@ def handle_feedback_submission(user_phone, feedback_text):
             
             connectSheet.sheet_ratings.update_cell(last_rating_row, 4, feedback_text)
             sendMessage.send_whatsapp_message(user_phone, "Obrigado! Seu feedback foi registrado e nos ajudará a melhorar. 😊")
-        else:
-            sendMessage.send_whatsapp_message(user_phone, "Não encontrei uma avaliação recente para associar a este feedback.")
     except Exception as e:
         print(f"Erro ao salvar feedback de {user_phone}: {e}")
