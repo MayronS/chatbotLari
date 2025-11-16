@@ -1,6 +1,7 @@
 from datetime import datetime
 from . import connectSheet
 import traceback
+import pandas as pd
 
 def _parse_expense_string(expense_string):
 
@@ -17,7 +18,7 @@ def _parse_expense_string(expense_string):
                 value_str = parts[1].strip()
                 category_str = parts[2].strip()
         
-        if not date_str:
+        if not value_str or not date_str or not category_str:
             return None, None, None
 
         # Completa o ano se necessário
@@ -38,7 +39,7 @@ def _parse_expense_string(expense_string):
 def delete_expense_from_sheet(user_phone, expense_string):
 
     if not connectSheet.sheet:
-        return "😕 Desculpe, estou com problemas para conectar à planilha."
+        return "😕 Desculpe, estou com problemas para conectar aos gastos, tente novamente mais tarde."
 
     # Analisa e normaliza a entrada do usuário
     date_str, value_str, category_str = _parse_expense_string(expense_string)
@@ -53,47 +54,40 @@ def delete_expense_from_sheet(user_phone, expense_string):
     try:
         sheet = connectSheet.sheet
         
-        user_cells = sheet.findall(str(user_phone))
+        all_data = sheet.get_all_records()
         
-        rows_to_delete = []
-        
-        user_value_float = float(value_str)
-        
-        for cell in user_cells:
-            try:
-                row_data = sheet.row_values(cell.row)
-                
-                sheet_date = str(row_data[1])
-                sheet_value = str(row_data[2]).replace(',', '.')
-                sheet_category = str(row_data[3]).lower()
-                
-                sheet_value_float = float(sheet_value)
-                
-                if (sheet_date == date_str and 
-                    sheet_value_float == user_value_float and 
-                    sheet_category == category_str):
-                    
-                    rows_to_delete.append(cell.row)
-            except Exception:
-                continue
+        df = pd.DataFrame(all_data)
 
-        # Processa o resultado
-        if not rows_to_delete:
+        user_phone_str = str(user_phone)
+        user_value_float = float(value_str)
+        df['Identificador'] = pd.to_numeric(df['Identificador'], errors='coerce').astype('Int64').astype(str)
+        df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
+        df['Categoria'] = df['Categoria'].astype(str).str.lower()
+        df['Data'] = df['Data'].astype(str)
+        
+        match_criteria = (
+            (df['Identificador'] == user_phone_str) &
+            (df['Data'] == date_str) &
+            (df['Valor'] == user_value_float) &
+            (df['Categoria'] == category_str)
+        )
+        
+        rows_to_delete = df[match_criteria]
+        if rows_to_delete.empty:
             return "🤷 Despesa não encontrada. Verifique se a data, valor e categoria estão *exatamente* iguais."
-        rows_to_delete.sort(reverse=True)
-        
-        for row_index in rows_to_delete:
+        sheet_row_indices = [idx + 2 for idx in rows_to_delete.index]
+        sheet_row_indices.sort(reverse=True)
+        for row_index in sheet_row_indices:
             sheet.delete_rows(row_index)
+        count = len(sheet_row_indices)
         
-        count = len(rows_to_delete)
+        count = len(sheet_row_indices)
         plural_s = "s" if count > 1 else ""
         foi_foram = "foram" if count > 1 else "foi"
-        
-        sheet.delete_rows(rows_to_delete[0])
         
         valor_formatado_br = f"{float(value_str):,.2f}".replace(',', '#').replace('.', ',').replace('#', '.')
         return f"✅ {count} despesa{plural_s} de {date_str} (R$ {valor_formatado_br}) {foi_foram} apagada{plural_s} com sucesso."
 
     except Exception as e:
         print(f"Erro ao apagar despesa: {e}\n{traceback.format_exc()}")
-        return "😕 Ocorreu um erro interno ao tentar apagar a despesa."
+        return "😕 Ocorreu um erro interno ao tentar apagar a despesa. Tente novamente mais tarde!"
