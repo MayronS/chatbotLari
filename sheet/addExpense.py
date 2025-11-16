@@ -2,6 +2,8 @@ from . import connectSheet
 from datetime import datetime
 from alert import checkAlert
 
+
+
 # PROCESSA A MENSAGEM E ADICIONA OS DADOS A PLANILHA
 def add_expense_to_sheet(user_phone, message_body):
     if not connectSheet.sheet:
@@ -44,13 +46,11 @@ def add_expense_to_sheet(user_phone, message_body):
 
         #FORMATAÇÃO DA DATA
         if date_str == "auto":
-            date_obj = datetime.now()
-            date_str = date_obj.strftime('%d/%m/%Y')
+            date_str = datetime.now().strftime('%d/%m/%Y')
         else:
             date_parts = date_str.split('/')
             if len(date_parts) == 2: # Usuário digitou apenas dia e mês (ex: 01/10)
-                current_year = datetime.now().year
-                date_str = f"{date_str}/{current_year}"
+                date_str = f"{date_str}/{datetime.now().year}"
 
             try:
                 expense_date = datetime.strptime(date_str, '%d/%m/%Y')
@@ -75,6 +75,7 @@ def add_expense_to_sheet(user_phone, message_body):
         # Tudo válido: grava na planilha
         new_row = [user_phone, date_str, value, category_str.strip(), datetime.now().strftime('%Y-%m-%d')]
         connectSheet.sheet.append_row(new_row)
+        
         checkAlert.check_spending_goal(user_phone)
         
         # Retorna a data completa, valor e categoria para o usuário saber que o ano foi adicionado
